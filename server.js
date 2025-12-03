@@ -9,10 +9,17 @@ app.use(express.json());
 // --- AYARLAR ---
 const PORT = process.env.PORT || 3000;
 
-// OYUN HAVUZUNU HARİCİ DOSYADAN ÇEK
-const GAME_IDS = require('./games');
+// OYUN LİSTESİNİ YÜKLE (Hata almamak için try-catch ekledim)
+let GAME_IDS = [];
+try {
+    GAME_IDS = require('./games');
+} catch (e) {
+    console.error("HATA: games.js dosyası bulunamadı veya hatalı!", e);
+    // Acil durum için boş liste yerine default 1 oyun koyalım ki sunucu çökmesin
+    GAME_IDS = [{ id: 730, name: "Counter-Strike 2", tags: ["Aksiyon"] }];
+}
 
-// --- GEÇİCİ HAFIZA (RAM) ---
+// --- GEÇİCİ HAFIZA ---
 let GLOBAL_SCORES = [];
 
 // --- YARDIMCI FONKSİYONLAR ---
@@ -34,47 +41,32 @@ function shuffleArray(array) {
     return array;
 }
 
-// --- AKILLI YORUM FİLTRESİ ---
-function isDescriptiveReview(text) {
+function isFunnyReview(text) {
     const t = text.toLowerCase().trim();
-
-    // 1. UZUNLUK KONTROLÜ (John Wick standardı: max 400)
-    if (t.length > 400) return false;
-    if (t.length < 30) return false;
-
-    // 2. YASAKLI KELİMELER
+    // Yasaklı kelimeler (Siyaset vb.)
     const forbidden = ["recep tayyip", "rte", "siyaset", "seçim"];
     for (let f of forbidden) { if (t.includes(f)) return false; }
-
-    // 3. İNGİLİZCE KONTROLÜ
-    const commonEnglish = [" the ", " is ", " and ", " this ", " game ", " good ", " bad ", " with "];
-    let count = 0;
-    for(let word of commonEnglish) { if(t.includes(word)) count++; }
-    if (count >= 2) return false;
-
-    // 4. ANAHTAR KELİME KONTROLÜ (Oyunla ilgili terimler geçiyor mu?)
-    // Bu, "çok güzel oyun" gibi boş yorumları eler.
-    const keywords = [
-        "hikaye", "grafik", "atmosfer", "mekanik", "oynanış", "bölüm", 
-        "karakter", "vuruş", "savaş", "dünya", "yapay zeka", "optimizasyon",
-        "görev", "müzik", "ses", "fizik", "bug", "hatası", "server", "hile",
-        "arkadaş", "zevk", "sarıyor", "efsane", "anlatım", "sonu", "fiyat"
-    ];
     
-    // Eğer küfür varsa (bizim kültürde komik sayılır) veya anahtar kelime varsa geçir.
-    const hasProfanity = ["amk", "aq", "oç", "piç", "siktir", "yarak"].some(w => t.includes(w));
-    const hasKeyword = keywords.some(kw => t.includes(kw));
+    // Uzunluk ve İngilizce kontrolü
+    if (t.length > 400) return false;
+    if (t.length < 20) return false;
+    const commonEnglish = [" the ", " is ", " and ", " this "];
+    let enCount = 0;
+    for(let w of commonEnglish) { if(t.includes(w)) enCount++; }
+    if (enCount >= 2) return false;
 
-    return hasKeyword || hasProfanity;
+    return true;
 }
 
-// --- API: OYUN İSİMLERİ (AUTOCOMPLETE İÇİN) ---
+// --- API ENDPOINTLERİ ---
+
+// 1. Oyun İsimlerini Getir (Autocomplete İçin)
 app.get('/api/all-games', (req, res) => {
     const names = GAME_IDS.map(g => g.name);
     res.json(names);
 });
 
-// --- API: OYUNLARI VE İPUÇLARINI GETİR ---
+// 2. Oyun Sorusu Getir
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -94,15 +86,13 @@ app.get('/api/game-quiz', async (req, res) => {
     const resultData = [];
     const MAX_GAMES = 10;
 
-    // 'all' filtresi kullanarak daha çeşitli yorumlar çekiyoruz
-    const filterType = 'all'; 
-
     try {
         for (let game of shuffledGames) {
             if (resultData.length >= MAX_GAMES) break;
 
             const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=${filterType}&num_per_page=100`;
+            // "all" filtresi daha çeşitli yorumlar getirir
+            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=100`;
             
             try {
                 const reviewResponse = await axios.get(reviewUrl);
@@ -111,43 +101,36 @@ app.get('/api/game-quiz', async (req, res) => {
                 if (!reviewsRaw || reviewsRaw.length === 0) continue;
 
                 let validReviews = reviewsRaw
-                    .filter(r => isDescriptiveReview(r.review)) 
+                    .filter(r => isFunnyReview(r.review)) 
                     .map(r => ({
                         text: maskGameName(r.review, game.name),
                         playtime: Math.floor(r.author.playtime_forever / 60)
                     }));
 
-                // İlk 20 kaliteli yorumu alıp karıştır
-                validReviews = shuffleArray(validReviews.slice(0, 20));
+                validReviews = shuffleArray(validReviews);
 
                 if (validReviews.length < 3) continue;
-
-                const finalReviews = validReviews.slice(0, 10);
 
                 resultData.push({
                     id: game.id,
                     name: game.name,
                     category: game.tags.join(', '),
                     image: imageUrl,
-                    reviews: finalReviews
+                    reviews: validReviews.slice(0, 10)
                 });
-            } catch (innerErr) {
-                continue;
-            }
+            } catch (innerErr) { continue; }
         }
-        
         res.json(resultData);
-
     } catch (error) {
-        console.error("Hata:", error.message);
         res.status(500).json({ error: "Veri çekilemedi" });
     }
 });
 
-// ... (Diğer API'ler ve Frontend Sunumu aynı)
+// 3. Skor Kaydet
 app.post('/api/submit-score', (req, res) => {
     const { username, category, score } = req.body;
-    if (!username || !category || score === undefined) return res.status(400).json({ error: "Eksik bilgi" });
+    if (!username) return res.status(400).json({ error: "Eksik bilgi" });
+    
     const existingIndex = GLOBAL_SCORES.findIndex(s => s.username === username && s.category === category);
     if (existingIndex > -1) {
         if (score > GLOBAL_SCORES[existingIndex].score) GLOBAL_SCORES[existingIndex].score = score;
@@ -157,6 +140,7 @@ app.post('/api/submit-score', (req, res) => {
     res.json({ success: true });
 });
 
+// 4. Liderlik Tablosu
 app.get('/api/leaderboard', (req, res) => {
     const category = req.query.category;
     let currentScores = [...GLOBAL_SCORES];
@@ -165,6 +149,7 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(currentScores.slice(0, 10));
 });
 
+// DOSYA SUNUMU
 app.get('/', (req, res) => { res.sendFile(__dirname + '/index.html'); });
 app.get('/logo.png', (req, res) => { res.sendFile(__dirname + '/logo.png'); });
 app.get('/privacy', (req, res) => { res.sendFile(__dirname + '/privacy.html'); });
