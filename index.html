@@ -253,18 +253,20 @@
         </main>
     </div>
 
-    <!-- RESULT EKRANI (Aynı kaldı) -->
+    <!-- RESULT EKRANI (DÜZENLENDİ) -->
     <div id="screen-result" class="screen-section flex-col min-h-screen pb-10">
         <div class="w-full max-w-[960px] mx-auto px-4 sm:px-10 py-5">
             <div class="flex flex-col gap-2 p-4">
                 <p class="text-white text-4xl font-black">Oyun Bitti</p>
-                <div class="flex gap-4 items-baseline">
-                    <p id="finalScoreDisplay" class="text-steam-text-dim text-xl">Bu Oyun: 0</p>
-                    <p id="sessionBestDisplay" class="text-primary text-xl font-bold">Kategori Rekoru: 0</p>
+                <!-- DÜZENLENDİ: Alt çizgi eklendi (border-b), gap ayarlandı -->
+                <div class="flex flex-wrap gap-6 items-end border-b border-white/10 pb-4">
+                    <p id="finalScoreDisplay" class="text-steam-text-dim text-xl">Mevcut Skor : 0</p>
+                    <p id="sessionBestDisplay" class="text-primary text-xl font-bold">En İyi Skor : 0</p>
                 </div>
             </div>
 
-            <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4 p-4"></div>
+            <!-- DÜZENLENDİ: Görseller biraz daha büyük (minmax 160px) ve daha yakın (gap-2) -->
+            <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 p-4"></div>
 
             <h2 class="text-white text-2xl font-bold px-4 pt-8 pb-4">Sıralama (<span id="resultCategoryTitle">...</span>)</h2>
             <div class="px-4">
@@ -456,8 +458,10 @@
             const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
             const leaderboard = await res.json();
             showScreen('screen-result');
-            document.getElementById('finalScoreDisplay').innerText = state.score;
-            document.getElementById('sessionBestDisplay').innerText = state.highScores[state.currentCategoryName] || state.score;
+            
+            // DÜZENLENDİ: Puan metinleri güncellendi
+            document.getElementById('finalScoreDisplay').innerText = `Mevcut Skor : ${state.score}`;
+            document.getElementById('sessionBestDisplay').innerText = `En İyi Skor : ${state.highScores[state.currentCategoryName] || state.score}`;
             document.getElementById('resultCategoryTitle').innerText = state.currentCategoryName;
             
             const grid = document.getElementById('resultGrid'); grid.innerHTML = "";
