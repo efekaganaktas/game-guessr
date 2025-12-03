@@ -9,13 +9,11 @@ app.use(express.json());
 // --- AYARLAR ---
 const PORT = process.env.PORT || 3000;
 
-// OYUN LİSTESİNİ YÜKLE (Hata almamak için try-catch ekledim)
+// OYUN HAVUZUNU HARİCİ DOSYADAN ÇEK
 let GAME_IDS = [];
 try {
     GAME_IDS = require('./games');
 } catch (e) {
-    console.error("HATA: games.js dosyası bulunamadı veya hatalı!", e);
-    // Acil durum için boş liste yerine default 1 oyun koyalım ki sunucu çökmesin
     GAME_IDS = [{ id: 730, name: "Counter-Strike 2", tags: ["Aksiyon"] }];
 }
 
@@ -43,30 +41,30 @@ function shuffleArray(array) {
 
 function isFunnyReview(text) {
     const t = text.toLowerCase().trim();
-    // Yasaklı kelimeler (Siyaset vb.)
     const forbidden = ["recep tayyip", "rte", "siyaset", "seçim"];
     for (let f of forbidden) { if (t.includes(f)) return false; }
     
-    // Uzunluk ve İngilizce kontrolü
-    if (t.length > 400) return false;
+    if (t.length > 300) return false;
     if (t.length < 20) return false;
     const commonEnglish = [" the ", " is ", " and ", " this "];
     let enCount = 0;
     for(let w of commonEnglish) { if(t.includes(w)) enCount++; }
     if (enCount >= 2) return false;
 
+    const boringPhrases = ["tavsiye ederim", "öneririm", "10/10", "güzel oyun", "harika oyun", "mükemmel oyun", "efsane oyun"];
+    if (t.length < 80) { for (let p of boringPhrases) { if (t.includes(p)) return false; } }
+    if (/^(\w)\1+$/.test(t)) return false; 
+
     return true;
 }
 
 // --- API ENDPOINTLERİ ---
 
-// 1. Oyun İsimlerini Getir (Autocomplete İçin)
 app.get('/api/all-games', (req, res) => {
     const names = GAME_IDS.map(g => g.name);
     res.json(names);
 });
 
-// 2. Oyun Sorusu Getir
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -91,7 +89,26 @@ app.get('/api/game-quiz', async (req, res) => {
             if (resultData.length >= MAX_GAMES) break;
 
             const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            // "all" filtresi daha çeşitli yorumlar getirir
+            
+            // 1. MAĞAZA DETAYLARINI ÇEK (Tarih ve Meta veri için)
+            let releaseDate = "Bilinmiyor";
+            let totalReviews = "Çok"; 
+            
+            try {
+                // Steam Store API bazen limit koyabilir, bu yüzden ayrı try-catch bloğunda
+                const storeUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
+                const storeRes = await axios.get(storeUrl);
+                if (storeRes.data[game.id].success) {
+                    const data = storeRes.data[game.id].data;
+                    releaseDate = data.release_date ? data.release_date.date : "Bilinmiyor";
+                    // Metacritic veya recommendations sayısını alabiliriz
+                    if(data.recommendations) totalReviews = data.recommendations.total.toLocaleString("tr-TR");
+                }
+            } catch (err) {
+                console.log("Store data fetch error (non-fatal)");
+            }
+
+            // 2. YORUMLARI ÇEK
             const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=100`;
             
             try {
@@ -116,6 +133,8 @@ app.get('/api/game-quiz', async (req, res) => {
                     name: game.name,
                     category: game.tags.join(', '),
                     image: imageUrl,
+                    date: releaseDate, // Yeni Veri
+                    reviews_count: totalReviews, // Yeni Veri
                     reviews: validReviews.slice(0, 10)
                 });
             } catch (innerErr) { continue; }
@@ -126,11 +145,9 @@ app.get('/api/game-quiz', async (req, res) => {
     }
 });
 
-// 3. Skor Kaydet
 app.post('/api/submit-score', (req, res) => {
     const { username, category, score } = req.body;
     if (!username) return res.status(400).json({ error: "Eksik bilgi" });
-    
     const existingIndex = GLOBAL_SCORES.findIndex(s => s.username === username && s.category === category);
     if (existingIndex > -1) {
         if (score > GLOBAL_SCORES[existingIndex].score) GLOBAL_SCORES[existingIndex].score = score;
@@ -140,7 +157,6 @@ app.post('/api/submit-score', (req, res) => {
     res.json({ success: true });
 });
 
-// 4. Liderlik Tablosu
 app.get('/api/leaderboard', (req, res) => {
     const category = req.query.category;
     let currentScores = [...GLOBAL_SCORES];
@@ -149,7 +165,6 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(currentScores.slice(0, 10));
 });
 
-// DOSYA SUNUMU
 app.get('/', (req, res) => { res.sendFile(__dirname + '/index.html'); });
 app.get('/logo.png', (req, res) => { res.sendFile(__dirname + '/logo.png'); });
 app.get('/privacy', (req, res) => { res.sendFile(__dirname + '/privacy.html'); });
