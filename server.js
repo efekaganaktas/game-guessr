@@ -63,6 +63,11 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
+// Logo (Favicon)
+app.get('/logo.png', (req, res) => {
+    res.sendFile(__dirname + '/logo.png');
+});
+
 // --- API: OYUNLARI GETİR ---
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
@@ -132,4 +137,14 @@ app.get('/api/leaderboard', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Sunucu çalışıyor: Port ${PORT}`);
+});
+
+// Robots.txt
+app.get('/robots.txt', (req, res) => {
+    res.sendFile(__dirname + '/robots.txt');
+});
+
+// Sitemap.xml
+app.get('/sitemap.xml', (req, res) => {
+    res.sendFile(__dirname + '/sitemap.xml');
 });
