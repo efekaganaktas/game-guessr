@@ -4,10 +4,21 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     
-    <title>GameGuessr - Oyun Bilgini Test Et</title>
-    <meta name="description" content="Steam kullanıcı yorumlarından oyunu tahmin et!">
+    <title>GameGuessr - Steam Yorumlarından Oyun Tahmin Et</title>
+    <meta name="description" content="Steam kullanıcı yorumlarından oyunu tahmin edebilir misin? Türkiye'nin en eğlenceli video oyunu bilgi yarışması. Aksiyon, RPG, Strateji oyunlarını bil, liderlik tablosuna gir.">
+    <meta name="keywords" content="steam oyun tahmin, oyun bulmaca, steam yorumları, oyun yarışması, gameguessr, video oyunu testi, gamer testi">
+    <meta name="author" content="GameGuessr">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:title" content="GameGuessr - Oyun Bilgini Test Et">
+    <meta property="og:description" content="Steam yorumlarına bakarak oyunu tahmin etmeye çalış! Bakalım kaç puan yapabileceksin?">
+    <meta property="og:image" content="https://gameguessr.com.tr/logo.png">
+    <meta property="og:url" content="https://gameguessr.com.tr">
+    <meta property="og:type" content="website">
+
     <link rel="icon" type="image/png" href="/logo.png">
-    
+    <link rel="apple-touch-icon" href="/logo.png">
+
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-FKSF680D58"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -15,7 +26,6 @@
       gtag('js', new Date());
       gtag('config', 'G-FKSF680D58');
     </script>
-
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -30,10 +40,11 @@
             colors: {
               "primary": "#66c0f4",
               "background-light": "#1b2838",
-              "background-dark": "#1b2838", /* ESKİ RENK */
-              "container-dark": "#2a475e", /* ESKİ KUTU RENGİ */
+              "background-dark": "#1b2838",
+              "container-dark": "#2a475e",
               "steam-dark": "#1b2838",
               "steam-darker": "#111c22",
+              "steam-component": "#2a475e",
               "steam-text-light": "#c7d5e0",
               "steam-text-dim": "#91b5ca",
               "steam-accent": "#66c0f4",
@@ -42,195 +53,225 @@
               "secondary-accent": "#4a5e70",
               "destructive-accent": "#c53333",
             },
-            fontFamily: { "display": ["Inter", "sans-serif"] },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
           },
         },
       }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #1b2838; color: #c7d5e0; }
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
         .bg-gradient-steam { background-image: linear-gradient(to right, #66c0f4, #4a95c2); }
+        .bg-gradient-steam:hover { background-image: linear-gradient(to right, #77c9f5, #5aa4d1); }
+        
         .screen-section { display: none; }
         .screen-section.active { display: flex; animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
+
         /* Modal Overlay */
         .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); z-index: 50;
-            justify-content: center; align-items: center; animation: fadeIn 0.2s;
-        }
-
-        /* Autocomplete Listesi */
-        #suggestion-list {
-            position: absolute;
-            background: #2a475e; /* Steam Kutusu */
-            border: 1px solid #66c0f4;
-            width: 100%;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 50;
-            border-radius: 0 0 4px 4px;
             display: none;
-        }
-        #suggestion-list div {
-            padding: 10px;
-            cursor: pointer;
-            color: #c7d5e0;
-            border-bottom: 1px solid #1b2838;
-        }
-        #suggestion-list div:hover {
-            background-color: #66c0f4;
-            color: black;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 50;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.2s;
         }
 
         .loader {
-            border: 4px solid #1b2838; border-top: 4px solid #66c0f4; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
+            border: 4px solid #1b2838;
+            border-top: 4px solid #66c0f4;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* Bulanık Resim İpucu */
-        .blur-hint { filter: blur(15px); transition: filter 0.5s; }
-        .blur-hint:hover { filter: blur(5px); }
+        /* Logo Gradient Efekti */
+        .logo-text {
+            background: linear-gradient(to right, #66c0f4, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 </head>
-<body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden flex flex-col">
+<body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden">
 
-    <div id="screen-home" class="screen-section h-full flex-col items-center justify-center p-4 relative">
-        <div class="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
-        <div class="z-10 flex flex-col items-center gap-6">
-            <div class="flex flex-col items-center gap-2">
+    <div id="screen-home" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
+        <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
+        
+        <div class="relative z-10 flex flex-col items-center gap-8">
+            <div class="flex flex-col items-center gap-2 animate-bounce">
                 <svg class="w-20 h-20 text-primary drop-shadow-[0_0_15px_rgba(102,192,244,0.5)]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
                 </svg>
-                <h1 class="text-6xl font-black text-[#c7d5e0] drop-shadow-lg" style="font-family: 'Arial Black', sans-serif;">GameGuessr</h1>
+                <h1 class="text-6xl font-black tracking-tight drop-shadow-lg logo-text">GameGuessr</h1>
             </div>
 
-            <div class="bg-container-dark/90 p-8 rounded-lg shadow-2xl border border-white/10 w-full max-w-sm flex flex-col gap-6">
-                <button onclick="startFlow()" class="w-full h-14 bg-gradient-steam text-[#1b2838] text-xl font-bold rounded hover:brightness-110 transition">OYNA</button>
-                
-                <label class="flex items-center gap-3 cursor-pointer group select-none justify-center">
+            <div class="bg-container-dark/80 p-8 rounded-2xl shadow-2xl backdrop-blur-sm border border-white/10 w-full max-w-sm flex flex-col items-center gap-6">
+                <button onclick="startFlow()" class="w-full h-14 bg-gradient-steam text-[#1b2838] text-xl font-bold rounded-xl shadow-lg hover:scale-105 transition-transform">
+                    OYNA
+                </button>
+
+                <label class="flex items-center gap-3 cursor-pointer group select-none">
                     <input type="checkbox" id="profanityCheck" class="w-5 h-5 rounded border-gray-500 bg-steam-darker text-primary focus:ring-0">
                     <span class="text-gray-300 group-hover:text-white transition-colors">Küfür Sansürü (Aile Modu)</span>
                 </label>
             </div>
+            
             <p class="text-white/40 text-sm mt-10">Oyuncuların Gerçek Yorumlarından Oyunu Tahmin Et</p>
+            
+            <div class="max-w-2xl text-center text-steam-text-dim text-xs mt-4 leading-relaxed opacity-60">
+                <p>GameGuessr, Steam üzerindeki binlerce oyunun gerçek kullanıcı yorumlarını kullanarak hazırlanmış ücretsiz bir bilgi yarışmasıdır. Aksiyon, RPG, Strateji gibi kategorilerde bilginizi test edin, skor tablosunda yükselin ve oyun kültürünüzü kanıtlayın.</p>
+            </div>
         </div>
     </div>
 
-    <div id="screen-login" class="screen-section h-full flex-col items-center justify-center p-4">
-        <div class="bg-container-dark p-8 rounded-lg shadow-2xl w-full max-w-md border border-white/10">
-            <h2 class="text-2xl font-bold text-white mb-4 text-center">Oyuncu Adı</h2>
-            <input id="usernameInput" class="w-full rounded bg-[#1b2838] border border-[#66c0f4] p-4 text-white text-center focus:ring-2 focus:ring-primary" placeholder="İsminiz..." autocomplete="off" />
-            
-            <div class="flex gap-3 mt-4">
-                <button onclick="showScreen('screen-home')" class="px-6 py-3 rounded bg-secondary-accent text-white font-bold hover:bg-opacity-80">Geri</button>
-                <button onclick="loginUser()" class="flex-1 px-6 py-3 rounded bg-gradient-steam text-[#1b2838] font-bold hover:brightness-110 transition-colors">Devam Et</button>
+    <div id="screen-login" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
+        <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1593305842323-91bb1679415c?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-10 blur-md"></div>
+        <div class="relative z-10 flex w-full max-w-md flex-col items-center rounded-lg bg-[#2a475e] p-8 shadow-2xl">
+            <h2 class="text-2xl font-bold text-white mb-4">Kimsin Sen?</h2>
+            <div class="w-full">
+                <input id="usernameInput" class="form-input flex w-full min-w-0 flex-1 rounded-lg border-2 border-transparent bg-[#1b2838] p-4 text-[#c7d5e0] placeholder:text-[#91b5ca] focus:border-primary focus:outline-none focus:ring-0 text-center" placeholder="Kullanıcı Adı" value=""/>
+            </div>
+            <div class="flex w-full gap-3 mt-4 justify-center">
+                <button onclick="showScreen('screen-home')" class="px-6 py-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500">Geri</button>
+                <button onclick="loginUser()" class="flex-1 px-6 py-3 rounded-lg bg-primary text-[#1b2838] font-bold hover:bg-white transition-colors">
+                    Devam Et
+                </button>
             </div>
         </div>
     </div>
 
     <div id="screen-category" class="screen-section flex-col min-h-screen">
-        <header class="flex justify-between items-center p-4 bg-[#171a21] border-b border-white/10">
-            <div class="flex items-center gap-3 cursor-pointer hover:text-primary" onclick="confirmExit()">
+        <header class="flex items-center justify-between border-b border-white/10 px-4 sm:px-10 py-3 bg-[#171a21]">
+            <div class="flex items-center gap-3 text-white cursor-pointer" onclick="confirmExit()">
                 <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                <h2 class="text-xl font-bold">GameGuessr</h2>
+                <h2 class="text-xl font-bold logo-text">GameGuessr</h2>
             </div>
-            <button onclick="logout()" class="text-xs bg-secondary-accent px-3 py-1 rounded text-white font-bold hover:bg-white hover:text-black transition">Çıkış</button>
+            <button onclick="logout()" class="rounded-lg h-8 px-3 bg-steam-component text-xs font-bold hover:bg-white hover:text-black transition-colors">Çıkış Yap</button>
         </header>
-        <main class="p-6 flex-1 flex flex-col items-center">
-            <h2 class="text-3xl font-black text-white mb-2">Hoşgeldin, <span id="welcomeText" class="text-primary"></span></h2>
-            <p class="text-steam-text-dim mb-6">Bir kategori seç</p>
-            <div id="categoryGrid" class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 w-full max-w-4xl"></div>
+        
+        <main class="flex flex-col flex-1 p-4 sm:px-10 md:px-20">
+            <div class="flex flex-col gap-2 pt-6 pb-6">
+                <p id="welcomeText" class="text-white text-3xl font-black">Hoşgeldin</p>
+                <div class="flex justify-between items-end border-b border-white/10 pb-4">
+                    <p class="text-white/60 text-base">Bir kategori seç</p>
+                </div>
+            </div>
+            <div id="categoryGrid" class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 pb-10">
+                </div>
         </main>
     </div>
 
-    <div id="screen-loading" class="screen-section h-full flex-col items-center justify-center">
+    <div id="screen-loading" class="screen-section flex-col items-center justify-center h-screen">
         <div class="loader mb-4"></div>
-        <p class="text-xl font-bold text-primary">Veriler Çekiliyor...</p>
+        <p class="text-xl font-bold text-primary">Yükleniyor...</p>
+        <p class="text-sm text-steam-text-dim">En komik yorumlar hazırlanıyor</p>
     </div>
 
     <div id="screen-game" class="screen-section flex-col min-h-screen">
-        <header class="flex justify-between items-center p-4 bg-[#171a21] border-b border-white/10">
-            <div class="cursor-pointer" onclick="confirmExit()">
-                <div class="text-xs text-steam-text-dim">Kategori</div>
-                <div id="gameCategoryDisplay" class="text-primary font-bold">...</div>
+        <header class="flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
+            <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="confirmExit()" title="Çıkış Yap">
+                <div class="size-8 text-primary group-hover:rotate-12 transition-transform">
+                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                </div>
+                <div class="flex flex-col">
+                    <h2 class="font-bold hidden sm:block logo-text">GameGuessr</h2>
+                    <span id="gameCategoryDisplay" class="text-xs text-primary font-bold sm:hidden block">...</span>
+                </div>
             </div>
-            <div class="font-bold text-white"><span id="scoreDisplay" class="text-primary">0</span> Puan</div>
-            <div class="text-right">
-                <span id="gameProgress" class="text-white font-bold">1/10</span>
-                <span class="text-[10px] text-steam-text-dim block">OYUN</span>
+            
+            <div class="hidden sm:block absolute left-1/2 transform -translate-x-1/2 bg-white/5 px-4 py-1 rounded-full border border-white/10">
+                <span class="text-steam-text-dim text-sm">Kategori:</span>
+                <span id="gameCategoryDisplayDesktop" class="text-primary text-sm font-bold ml-1">...</span>
+            </div>
+
+            <div class="flex gap-4 sm:gap-9">
+                <span id="scoreDisplay" class="text-primary font-medium">Puan: 0</span>
+                <span id="gameProgress" class="text-white font-medium">1/10</span>
             </div>
         </header>
 
-        <main class="flex flex-col items-center p-4 w-full max-w-3xl mx-auto gap-6 flex-1">
-            
-            <div id="hintImageArea" class="hidden w-full h-40 bg-black rounded overflow-hidden relative flex justify-center items-center border-2 border-[#2a475e]">
-                <img id="hintImage" src="" class="h-full w-auto object-cover blur-hint opacity-70">
-                <p class="absolute text-white font-bold drop-shadow-md pointer-events-none">GÖRSEL İPUCU</p>
-            </div>
-
-            <div class="w-full bg-container-dark p-6 rounded shadow-lg relative border border-white/5 min-h-[180px] flex flex-col justify-center">
-                <div class="absolute top-0 right-0 bg-primary text-[#1b2838] px-2 py-1 text-xs font-bold rounded-bl">Yorum</div>
-                <p id="reviewText" class="text-[#c7d5e0] text-lg italic leading-relaxed text-center">"..."</p>
-                <div class="mt-4 pt-4 border-t border-white/10 flex justify-center gap-4 text-xs text-steam-text-dim">
-                    <span id="playtimeText">🕐 ... saat</span>
+        <main class="flex flex-col items-center gap-6 p-4 mt-4 w-full max-w-4xl mx-auto flex-1">
+            <div class="w-full bg-container-dark rounded-lg p-6 relative shadow-lg border border-white/5 min-h-[200px] flex flex-col justify-center">
+                <div id="reviewCountBadge" class="absolute top-4 right-4 bg-black/40 text-primary text-xs font-bold px-3 py-1 rounded-full">Yorum 1/10</div>
+                <div class="flex flex-col gap-3">
+                    <p class="text-primary text-lg font-bold">Oyuncu Yorumu</p>
+                    <p id="reviewText" class="text-white text-lg font-normal leading-relaxed italic">"..."</p>
+                    
+                    <div class="mt-4 border-t border-white/10 pt-2 flex items-center gap-2 text-steam-text-dim text-sm">
+                        <span class="material-symbols-outlined text-base">schedule</span>
+                        <span id="playtimeText">Oynama Süresi: ...</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="flex gap-2 w-full justify-center">
-                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel (-15)</button>
-                <button onclick="useHint('word')" id="btnHintWord" class="px-4 py-2 bg-[#4d3a2c] border border-orange-500/50 text-orange-300 hover:bg-orange-900 text-xs font-bold rounded transition">🔤 Harf (-10)</button>
-                <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-5)</button>
-            </div>
-
-            <div class="w-full max-w-md relative">
-                <input id="guessInput" class="w-full h-14 bg-[#1b2838] border border-[#66c0f4] rounded p-4 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+            <div class="w-full max-w-lg flex flex-col items-center gap-4 mt-4">
+                <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 text-base focus:ring-2 focus:ring-primary" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
                 
-                <div id="suggestion-list"></div> <p id="wordHintText" class="text-center text-primary font-mono mt-2 tracking-widest text-sm h-5 font-bold"></p>
-            </div>
+                <div class="flex w-full gap-3">
+                    <button onclick="makeGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors">Tahmin Et</button>
+                    <button onclick="nextReview()" class="h-12 px-5 bg-secondary-accent hover:bg-[#576b7e] text-white font-bold rounded-lg grow transition-colors">İpucu (-10)</button>
+                    <button onclick="passGame()" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors">Pas Geç</button>
+                </div>
 
-            <div class="flex w-full max-w-md gap-3">
-                <button onclick="checkGuess()" class="flex-1 h-12 bg-gradient-steam text-[#1b2838] font-bold rounded hover:brightness-110 transition">TAHMİN ET</button>
-                <button onclick="passGame()" class="px-6 bg-destructive-accent text-white font-bold rounded hover:bg-red-600 transition">PAS</button>
+                <div class="min-h-6 pt-2">
+                    <p id="feedbackMsg" class="text-lg font-bold text-center"></p>
+                </div>
             </div>
-
-            <p id="feedbackMsg" class="h-6 text-lg font-bold text-center"></p>
         </main>
     </div>
 
-    <div id="screen-result" class="screen-section flex-col min-h-screen p-4 items-center">
-        <h2 class="text-4xl font-black text-white mb-2">OYUN BİTTİ</h2>
-        <p id="finalScoreDisplay" class="text-xl text-primary mb-8">Puan: 0</p>
-        
-        <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 w-full max-w-4xl mb-8"></div>
-        
-        <h3 class="text-xl font-bold text-white mb-4 w-full max-w-2xl text-left">Sıralama</h3>
-        <div class="w-full max-w-2xl bg-container-dark rounded border border-white/10 mb-8">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-[#171a21] text-primary"><tr><th class="p-3">#</th><th>Oyuncu</th><th>Puan</th></tr></thead>
-                <tbody id="leaderboardBody"></tbody>
-            </table>
-        </div>
+    <div id="screen-result" class="screen-section flex-col min-h-screen pb-10">
+        <div class="w-full max-w-[960px] mx-auto px-4 sm:px-10 py-5">
+            <div class="flex flex-col gap-2 p-4">
+                <p class="text-white text-4xl font-black">Oyun Bitti</p>
+                <div class="flex gap-4 items-baseline">
+                    <p id="finalScoreDisplay" class="text-steam-text-dim text-xl">Bu Oyun: 0</p>
+                    <p id="sessionBestDisplay" class="text-primary text-xl font-bold">Kategori Rekoru: 0</p>
+                </div>
+            </div>
 
-        <button onclick="initCategories()" class="px-8 py-3 bg-gradient-steam text-[#1b2838] font-bold rounded hover:brightness-110">Kategorilere Dön</button>
+            <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4 p-4"></div>
+
+            <h2 class="text-white text-2xl font-bold px-4 pt-8 pb-4">Sıralama (<span id="resultCategoryTitle">...</span>)</h2>
+            <div class="px-4">
+                <div class="overflow-hidden rounded-lg border border-[#325467] bg-steam-darker">
+                    <table class="w-full">
+                        <thead class="bg-[#192a34]">
+                            <tr><th class="px-4 py-3 text-left text-primary">#</th><th class="px-4 py-3 text-left text-primary">Kullanıcı</th><th class="px-4 py-3 text-left text-primary">Puan</th></tr>
+                        </thead>
+                        <tbody id="leaderboardBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex justify-center pt-8">
+                <button onclick="initCategories()" class="h-12 px-8 bg-primary text-steam-darker font-bold rounded-lg hover:bg-white transition-colors">Kategorilere Dön</button>
+            </div>
+        </div>
     </div>
 
     <div id="exitModal" class="modal-overlay">
-        <div class="bg-container-dark p-8 rounded shadow-2xl max-w-sm w-full text-center border border-white/10">
+        <div class="bg-container-dark p-6 rounded-lg shadow-2xl max-w-sm w-full text-center border border-white/10">
             <h3 class="text-xl font-bold text-white mb-2">Çıkmak istiyor musun?</h3>
-            <p class="text-steam-text-dim mb-6 text-sm">Mevcut oyun iptal edilecek.</p>
+            <p class="text-steam-text-dim mb-6">Mevcut oyun ilerlemen kaybolacak.</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="closeExitModal()" class="px-4 py-2 rounded bg-secondary-accent text-white hover:bg-gray-500">İptal</button>
+                <button onclick="closeExitModal()" class="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-500">İptal</button>
                 <button onclick="doExit()" class="px-4 py-2 rounded bg-destructive-accent text-white hover:bg-red-600 font-bold">Çıkış Yap</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = '/api'; 
-        let allGameNames = [];
-
+        const API_URL = '/api'; // Relative Path
+        
         const CATEGORIES = [
             { name: "Karışık", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/header.jpg" },
             { name: "Aksiyon", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/header.jpg" },
@@ -246,116 +287,282 @@
             { name: "Eşli", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/550/header.jpg" },
             { name: "3D", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1245620/header.jpg" },
             { name: "Birinci Şahıs", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1172470/header.jpg" },
-            { name: "Komedi", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/265930/header.jpg" }
+            { name: "Komedi", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/265930/header.jpg" } // Goat Sim
         ];
 
-        let state = { username: "", score: 0, currentCategoryName: "", highScores: {}, games: [], currentGameIndex: 0, currentReviewIndex: 0, currentPot: 100, history: [], filterProfanity: false };
-
-        window.onload = async function() {
-            showScreen('screen-home');
-            try { const res = await fetch(`${API_URL}/all-games`); if(res.ok) allGameNames = await res.json(); } catch(e) { console.log("Liste çekilemedi"); }
+        let state = {
+            username: "",
+            score: 0,
+            currentCategoryName: "", 
+            highScores: {},
+            games: [],
+            currentGameIndex: 0,
+            currentReviewIndex: 0,
+            currentPot: 100,
+            history: [],
+            filterProfanity: false
         };
 
-        function showScreen(id) { document.querySelectorAll('.screen-section').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        function startFlow() { state.filterProfanity = document.getElementById('profanityCheck').checked; const stored = localStorage.getItem('steam_username'); if(stored) { state.username = stored; initCategories(); } else { showScreen('screen-login'); } }
-        function loginUser() { const val = document.getElementById('usernameInput').value.trim(); if(!val) return alert("Lütfen bir isim girin!"); localStorage.setItem('steam_username', val); state.username = val; initCategories(); }
-        function logout() { localStorage.removeItem('steam_username'); showScreen('screen-home'); }
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
-        function doExit() { closeExitModal(); showScreen('screen-home'); }
+        window.onload = function() {
+            showScreen('screen-home');
+        };
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function startFlow() {
+            const isChecked = document.getElementById('profanityCheck').checked;
+            state.filterProfanity = isChecked;
+
+            const storedUser = localStorage.getItem('steam_username');
+            if(storedUser) {
+                state.username = storedUser;
+                initCategories();
+            } else {
+                showScreen('screen-login');
+            }
+        }
+
+        function loginUser() {
+            const user = document.getElementById('usernameInput').value.trim();
+            if(!user) return alert("Lütfen bir isim girin!");
+            localStorage.setItem('steam_username', user);
+            state.username = user;
+            initCategories();
+        }
+
+        function logout() {
+            localStorage.removeItem('steam_username');
+            showScreen('screen-home');
+        }
+
+        function confirmExit() {
+            const modal = document.getElementById('exitModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeExitModal() {
+            const modal = document.getElementById('exitModal');
+            modal.style.display = 'none';
+        }
+
+        function doExit() {
+            closeExitModal();
+            showScreen('screen-home');
+        }
 
         function initCategories() {
-            document.getElementById('welcomeText').innerText = state.username;
+            document.getElementById('welcomeText').innerText = `Hoşgeldin, ${state.username}`;
             const grid = document.getElementById('categoryGrid');
             grid.innerHTML = "";
-            CATEGORIES.forEach(cat => {
-                const div = document.createElement('div');
-                div.className = "relative h-28 sm:h-32 rounded overflow-hidden cursor-pointer group border border-white/5 hover:border-primary transition-all shadow-lg hover:shadow-primary/20";
-                div.onclick = () => fetchGames(cat.name);
-                const rec = state.highScores[cat.name] || 0;
-                div.innerHTML = `<img src="${cat.img}" class="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition duration-700 opacity-60 group-hover:opacity-80"><div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 flex flex-col justify-center items-center p-2"><span class="text-white font-bold text-sm sm:text-base uppercase tracking-wider shadow-black drop-shadow-md">${cat.name}</span><span class="text-[10px] text-primary font-bold mt-1">Rekor: ${rec}</span></div>`;
-                grid.appendChild(div);
+
+            CATEGORIES.forEach((cat) => {
+                const catScore = state.highScores[cat.name] || 0;
+                const card = document.createElement('div');
+                card.className = "group relative cursor-pointer overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:ring-2 hover:ring-primary h-32";
+                card.onclick = () => fetchGames(cat.name);
+                
+                card.innerHTML = `
+                    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('${cat.img}');"></div>
+                    <div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors"></div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center p-2">
+                        <p class="text-white text-xl font-bold uppercase tracking-wider text-center z-10 drop-shadow-lg">${cat.name}</p>
+                        <p class="text-primary text-sm font-bold mt-1 z-10 drop-shadow-md">Rekor: ${catScore}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
             });
             showScreen('screen-category');
         }
 
+        function cleanText(text) {
+            if(!state.filterProfanity) return text;
+            const badWords = ["amk", "aq", "mk", "oç", "piç", "siktir", "yarak", "yarrak", "amcık", "kaşar", "orosbu", "orospu", "sik"];
+            let cleaned = text;
+            badWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                cleaned = cleaned.replace(regex, "***");
+            });
+            return cleaned;
+        }
+
         async function fetchGames(category) {
-            state.currentCategoryName = category; showScreen('screen-loading');
-            try { const res = await fetch(`${API_URL}/game-quiz?category=${encodeURIComponent(category)}`); const data = await res.json(); if(!data || data.length === 0) { alert("Oyun bulunamadı."); showScreen('screen-category'); return; } state.games = data; state.currentGameIndex = 0; state.score = 0; state.history = []; startGame(); } catch(e) { console.error(e); alert("Sunucuya bağlanılamadı."); showScreen('screen-category'); }
-        }
+            state.currentCategoryName = category;
+            showScreen('screen-loading');
+            try {
+                const res = await fetch(`${API_URL}/game-quiz?category=${encodeURIComponent(category)}`);
+                const data = await res.json();
+                
+                if(!data || data.length === 0) {
+                    alert("Bu kategoride oyun bulunamadı.");
+                    showScreen('screen-category');
+                    return;
+                }
 
-        function startGame() { showScreen('screen-game'); loadLevel(); }
-        function loadLevel() { if(state.currentGameIndex >= state.games.length) { endGame(); return; } state.currentReviewIndex = 0; state.currentPot = 100; document.getElementById('hintImageArea').classList.add('hidden'); document.getElementById('wordHintText').innerText = ""; document.getElementById('btnHintImage').disabled = false; document.getElementById('btnHintWord').disabled = false; document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('btnHintWord').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('feedbackMsg').innerText = ""; updateUI(); }
-        function updateUI() {
-            const game = state.games[state.currentGameIndex];
-            const rev = game.reviews[state.currentReviewIndex] || {text: "Yorum yok.", playtime: 0};
-            document.getElementById('gameCategoryDisplay').innerText = state.currentCategoryName;
-            document.getElementById('scoreDisplay').innerText = state.score;
-            document.getElementById('gameProgress').innerText = `${state.currentGameIndex + 1}/10`;
-            let txt = rev.text; if(state.filterProfanity) txt = cleanText(txt);
-            document.getElementById('reviewText').innerText = `"${txt}"`;
-            document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
-            document.getElementById('playtimeText').innerHTML = `🕐 ${rev.playtime} saat`;
-            const inp = document.getElementById('guessInput'); inp.value = ""; inp.focus(); document.getElementById('suggestion-list').style.display = 'none';
-        }
-
-        function cleanText(text) { const badWords = ["amk", "aq", "mk", "oç", "piç", "siktir", "yarak", "yarrak", "amcık", "kaşar", "orosbu", "orospu", "sik"]; let cleaned = text; badWords.forEach(word => { const regex = new RegExp(`\\b${word}\\b`, 'gi'); cleaned = cleaned.replace(regex, "***"); }); return cleaned; }
-
-        function useHint(type) {
-            const game = state.games[state.currentGameIndex];
-            if (type === 'image') {
-                state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
-                const area = document.getElementById('hintImageArea'); const img = document.getElementById('hintImage'); img.src = game.image; area.classList.remove('hidden');
-                const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
-            } else if (type === 'word') {
-                state.currentPot -= 10; if(state.currentPot < 0) state.currentPot = 0;
-                let hiddenName = game.name.replace(/[a-zA-Z0-9]/g, (char, index) => { return index === 0 || game.name[index-1] === ' ' ? char : '*'; });
-                document.getElementById('wordHintText').innerText = hiddenName;
-                const btn = document.getElementById('btnHintWord'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
+                state.games = data;
+                state.currentGameIndex = 0;
+                state.score = 0;
+                state.history = [];
+                startGame();
+            } catch(err) {
+                console.error(err);
+                alert("Sunucu hatası.");
+                showScreen('screen-category');
             }
         }
 
-        function nextReview() { if(state.currentReviewIndex < 9) { state.currentReviewIndex++; state.currentPot -= 5; if(state.currentPot < 0) state.currentPot = 0; updateUI(); } else { document.getElementById('feedbackMsg').innerText = "Son ipucu!"; } }
-
-        const input = document.getElementById('guessInput');
-        const list = document.getElementById('suggestion-list');
-        input.addEventListener('input', function() {
-            const val = this.value.toLowerCase(); list.innerHTML = ''; if (!val) { list.style.display = 'none'; return; }
-            const matches = allGameNames.filter(n => n.toLowerCase().startsWith(val)).slice(0, 5);
-            if (matches.length > 0) { list.style.display = 'block'; matches.forEach(match => { const div = document.createElement('div'); div.innerText = match; div.onclick = function() { input.value = match; list.style.display = 'none'; checkGuess(); }; list.appendChild(div); }); } else { list.style.display = 'none'; }
-        });
-        document.addEventListener('click', function(e) { if (e.target !== input && e.target !== list) { list.style.display = 'none'; } });
-
-        function checkGuess() {
-            const userGuess = input.value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
-            const correctName = state.games[state.currentGameIndex].name.toLowerCase().replace(/[^a-z0-9]/g, "");
-            const msg = document.getElementById('feedbackMsg');
-            if (userGuess === correctName) {
-                state.score += state.currentPot; state.history.push({...state.games[state.currentGameIndex], isCorrect: true});
-                msg.innerText = "DOĞRU!"; msg.className = "h-6 text-lg font-bold text-center text-steam-success";
-                setTimeout(() => { state.currentGameIndex++; loadLevel(); }, 1000);
-            } else { msg.innerText = "Yanlış!"; msg.className = "h-6 text-lg font-bold text-center text-steam-error"; }
+        function startGame() {
+            showScreen('screen-game');
+            loadLevel();
         }
 
-        function passGame() { state.history.push({...state.games[state.currentGameIndex], isCorrect: false}); state.currentGameIndex++; loadLevel(); }
-        document.getElementById('guessInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkGuess(); });
+        function loadLevel() {
+            if(state.currentGameIndex >= state.games.length) {
+                endGame();
+                return;
+            }
+            state.currentReviewIndex = 0;
+            state.currentPot = 100;
+            updateUI();
+        }
+
+        function updateUI() {
+            const game = state.games[state.currentGameIndex];
+            const currentReviewData = game.reviews[state.currentReviewIndex] || {text: "Yorum yok.", playtime: 0};
+
+            const catName = state.currentCategoryName;
+            document.getElementById('gameCategoryDisplay').innerText = catName;
+            document.getElementById('gameCategoryDisplayDesktop').innerText = catName;
+
+            document.getElementById('scoreDisplay').innerText = `Puan: ${state.score}`;
+            document.getElementById('gameProgress').innerText = `${state.currentGameIndex + 1}/${state.games.length}`;
+            
+            document.getElementById('reviewText').innerText = `"${cleanText(currentReviewData.text)}"`;
+            document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
+            document.getElementById('playtimeText').innerText = `Bu oyunu ${currentReviewData.playtime} saat oynadı`;
+
+            const inp = document.getElementById('guessInput');
+            inp.value = "";
+            inp.focus();
+            document.getElementById('feedbackMsg').innerText = "";
+        }
+
+        function nextReview() {
+            if(state.currentReviewIndex < 9) {
+                state.currentReviewIndex++;
+                state.currentPot -= 10;
+                if(state.currentPot < 0) state.currentPot = 0;
+                updateUI();
+            } else {
+                const msg = document.getElementById('feedbackMsg');
+                msg.innerText = "Son ipucu!";
+                msg.className = "text-lg font-bold text-center text-destructive-accent";
+            }
+        }
+
+        function cleanString(str) {
+            return str.toLowerCase().replace(/[^a-z0-9şğüöçid]/g, '');
+        }
+
+        function makeGuess() {
+            const rawGuess = document.getElementById('guessInput').value;
+            const rawCorrect = state.games[state.currentGameIndex].name;
+            const userGuess = cleanString(rawGuess);
+            const correctName = cleanString(rawCorrect);
+            const msg = document.getElementById('feedbackMsg');
+
+            let isMatch = false;
+
+            if (userGuess === correctName) {
+                isMatch = true;
+            }
+            else if (userGuess.length >= 2 && correctName.startsWith(userGuess)) {
+                isMatch = true;
+            }
+            else if (userGuess.length > 3 && correctName.includes(userGuess)) {
+                isMatch = true;
+            }
+
+            if (isMatch) {
+                state.score += state.currentPot;
+                state.history.push({...state.games[state.currentGameIndex], isCorrect: true});
+                
+                msg.innerText = `Doğru! Cevap: ${state.games[state.currentGameIndex].name}`;
+                msg.className = "text-lg font-bold text-center text-steam-success";
+                
+                setTimeout(() => {
+                    state.currentGameIndex++;
+                    loadLevel();
+                }, 1500);
+            } else {
+                msg.innerText = "Yanlış tahmin!";
+                msg.className = "text-lg font-bold text-center text-destructive-accent";
+            }
+        }
+
+        function passGame() {
+            state.history.push({...state.games[state.currentGameIndex], isCorrect: false});
+            state.currentGameIndex++;
+            loadLevel();
+        }
+
+        document.getElementById('guessInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') makeGuess();
+        });
 
         async function endGame() {
-            await fetch(`${API_URL}/submit-score`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: state.username, category: state.currentCategoryName, score: state.score}) });
-            const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
-            const leaderboard = await res.json();
+            const cat = state.currentCategoryName;
+            
+            await fetch(`${API_URL}/submit-score`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: state.username, category: cat, score: state.score })
+            });
+
+            const lbRes = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(cat)}`);
+            const leaderboard = await lbRes.json();
+
             showScreen('screen-result');
-            document.getElementById('finalScoreDisplay').innerText = state.score;
-            document.getElementById('sessionBestDisplay').innerText = state.highScores[state.currentCategoryName] || state.score;
-            const grid = document.getElementById('resultGrid'); grid.innerHTML = "";
-            state.history.forEach(h => {
-                const div = document.createElement('div'); div.className = `relative aspect-video bg-black rounded border-2 ${h.isCorrect ? 'border-steam-success' : 'border-steam-error'}`;
-                div.innerHTML = `<img src="${h.image}" class="w-full h-full object-cover opacity-70"><div class="absolute bottom-0 w-full bg-black/80 text-white text-[10px] p-1 text-center truncate">${h.name}</div>`;
+            document.getElementById('finalScoreDisplay').innerText = `Bu Oyun: ${state.score}`;
+            document.getElementById('resultCategoryTitle').innerText = cat;
+            
+            const myBest = leaderboard.find(p => p.username === state.username)?.score || state.score;
+            document.getElementById('sessionBestDisplay').innerText = `Kategori Rekoru: ${myBest}`;
+            state.highScores[cat] = myBest;
+
+            const grid = document.getElementById('resultGrid');
+            grid.innerHTML = "";
+            state.history.forEach(game => {
+                const borderColor = game.isCorrect ? 'ring-steam-success' : 'ring-steam-error';
+                const div = document.createElement('div');
+                div.className = "flex flex-col gap-2";
+                div.innerHTML = `
+                    <div class="w-full bg-center bg-no-repeat aspect-[16/9] bg-cover rounded-lg ring-2 ${borderColor} relative group" style="background-image: url('${game.image}');">
+                         <div class="absolute bottom-0 w-full bg-black/80 text-white text-xs p-1 text-center opacity-0 group-hover:opacity-100 transition-opacity rounded-b-lg">${game.name}</div>
+                    </div>`;
                 grid.appendChild(div);
             });
-            const tbody = document.getElementById('leaderboardBody'); tbody.innerHTML = "";
-            leaderboard.forEach((p, i) => { const isMe = p.username === state.username ? "bg-primary text-background-dark font-bold" : "text-slate-400 border-b border-white/5"; tbody.innerHTML += `<tr class="${isMe}"><td class="p-3">${i+1}</td><td>${p.username}</td><td>${p.score}</td></tr>`; });
+
+            const tbody = document.getElementById('leaderboardBody');
+            tbody.innerHTML = "";
+            leaderboard.forEach((p, i) => {
+                const isMe = p.username === state.username ? "bg-steam-component text-primary font-bold" : "border-t border-[#325467] text-steam-text-dim";
+                const tr = document.createElement('tr');
+                tr.className = isMe;
+                tr.innerHTML = `<td class="px-4 py-3">${i+1}</td><td class="px-4 py-3 ${p.username === state.username ? 'text-white' : ''}">${p.username}</td><td class="px-4 py-3">${p.score}</td>`;
+                tbody.appendChild(tr);
+            });
         }
     </script>
+    
+    <footer class="w-full bg-[#171a21] text-steam-text-dim text-center py-6 border-t border-white/10 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 text-xs leading-relaxed">
+            <p><strong>GameGuessr</strong>, Valve Corporation tarafından oluşturulmamış, onaylanmamış veya desteklenmemiştir.</p>
+            <p>Bu proje, Steam Web API kullanan, hayran yapımı (fan-made) ücretsiz bir oyundur.</p>
+            <p class="mt-2 text-[10px] opacity-40"><a href="/privacy" target="_blank" class="hover:text-primary">Gizlilik Politikası</a></p>
+        </div>
+    </footer>
 </body>
 </html>
