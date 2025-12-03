@@ -14,7 +14,7 @@ let GAME_IDS = [];
 try {
     GAME_IDS = require('./games');
 } catch (e) {
-    console.error("HATA: games.js dosyası bulunamadı veya hatalı!", e);
+    console.error("HATA: games.js dosyası bulunamadı!", e);
     GAME_IDS = [{ id: 730, name: "Counter-Strike 2", tags: ["Aksiyon"] }];
 }
 
@@ -25,6 +25,8 @@ let GLOBAL_SCORES = [];
 function maskGameName(text, gameName) {
     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     let masked = text.replace(new RegExp(escapeRegExp(gameName), 'gi'), '***');
+    
+    // Oyun adının parçalarını da maskele (örn: "Call of Duty" -> "Call", "Duty")
     const parts = gameName.split(/[\s:-]+/).filter(p => p.length > 3);
     parts.forEach(part => {
         masked = masked.replace(new RegExp(escapeRegExp(part), 'gi'), '***');
@@ -40,19 +42,27 @@ function shuffleArray(array) {
     return array;
 }
 
-function isFunnyReview(text) {
+// Filtreleme Fonksiyonu (strictMode: false ise kuralları gevşetir)
+function isReviewValid(text, strictMode = true) {
     const t = text.toLowerCase().trim();
-    const forbidden = ["recep tayyip", "rte", "siyaset", "seçim", "cumhurbaşkanı"];
+    
+    // Kesin Yasaklılar (Siyaset, küfür vb.)
+    const forbidden = ["recep tayyip", "rte", "siyaset", "seçim", "cumhurbaşkanı", "kurdistan"];
     for (let f of forbidden) { if (t.includes(f)) return false; }
-    
-    if (t.length > 400) return false;
-    if (t.length < 20) return false;
-    
-    // İngilizce yorumları elemek için basit kontrol
-    const commonEnglish = [" the ", " is ", " and ", " this ", " game "];
-    let enCount = 0;
-    for(let w of commonEnglish) { if(t.includes(w)) enCount++; }
-    if (enCount >= 2) return false;
+
+    // Uzunluk Kontrolü
+    const minLen = strictMode ? 20 : 5; // Gevşek modda 5 karaktere kadar izin ver
+    const maxLen = 600;
+    if (t.length > maxLen) return false;
+    if (t.length < minLen) return false;
+
+    // İngilizce/Spam Kontrolü (Sadece sıkı modda)
+    if (strictMode) {
+        const commonEnglish = [" the ", " is ", " and ", " this ", " game ", " good ", " bad "];
+        let enCount = 0;
+        for(let w of commonEnglish) { if(t.includes(w)) enCount++; }
+        if (enCount >= 3) return false; // Çok fazla İngilizce kelime varsa ele
+    }
 
     return true;
 }
@@ -65,7 +75,7 @@ app.get('/api/all-games', (req, res) => {
     res.json(names);
 });
 
-// 2. Oyun Sorusu Getir (GÜNCELLENDİ: Detay Bilgileri Ekledi)
+// 2. Oyun Sorusu Getir (Geliştirilmiş Versiyon)
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -76,7 +86,7 @@ app.get('/api/game-quiz', async (req, res) => {
         pool = GAME_IDS.filter(g => g.tags.includes(category));
     }
 
-    // Havuz küçükse rastgele oyunlarla tamamla
+    // Havuz çok küçükse rastgele oyunlarla destekle
     if (pool.length < 10) {
         const others = GAME_IDS.filter(g => !pool.includes(g));
         pool = pool.concat(shuffleArray(others).slice(0, 15 - pool.length));
@@ -84,64 +94,81 @@ app.get('/api/game-quiz', async (req, res) => {
 
     const shuffledGames = shuffleArray([...pool]); 
     const resultData = [];
-    const MAX_GAMES = 10;
+    const MAX_GAMES = 10; // İstemciye 10 oyun gönder
 
-    try {
-        for (let game of shuffledGames) {
-            if (resultData.length >= MAX_GAMES) break;
+    for (let game of shuffledGames) {
+        if (resultData.length >= MAX_GAMES) break;
 
-            const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=50`;
-            
-            // Oyun Detaylarını Çek (Yeni Eklenen Kısım)
-            let gameDetails = { developer: "Bilinmiyor", date: "Bilinmiyor", likes: "0" };
-            try {
-                // Not: Steam Store API rate-limit uygulayabilir, bu yüzden hata olursa oyunu patlatmıyoruz.
-                const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
-                const detailRes = await axios.get(detailsUrl);
-                if(detailRes.data && detailRes.data[game.id] && detailRes.data[game.id].success) {
-                    const data = detailRes.data[game.id].data;
-                    gameDetails = {
-                        developer: data.developers ? data.developers[0] : "Bilinmiyor",
-                        date: data.release_date ? data.release_date.date : "Bilinmiyor",
-                        likes: data.recommendations ? data.recommendations.total.toLocaleString() : "0"
-                    };
-                }
-            } catch (detailErr) {
-                console.log(`Detay çekilemedi: ${game.name}`);
-            }
+        try {
+            // 1. ADIM: Yorumları Çek (Maksimum 100 tane iste ki elenecek payı olsun)
+            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=100`;
+            const reviewResponse = await axios.get(reviewUrl, { timeout: 3000 }); // 3sn zaman aşımı
+            const reviewsRaw = reviewResponse.data.reviews;
 
-            try {
-                const reviewResponse = await axios.get(reviewUrl);
-                const reviewsRaw = reviewResponse.data.reviews;
+            if (!reviewsRaw || reviewsRaw.length === 0) continue;
 
-                if (!reviewsRaw || reviewsRaw.length === 0) continue;
+            // 2. ADIM: Filtreleme (Önce Sıkı, Yetmezse Gevşek)
+            let validReviews = reviewsRaw
+                .filter(r => isReviewValid(r.review, true)) // Sıkı Mod
+                .map(r => ({
+                    text: maskGameName(r.review, game.name),
+                    playtime: Math.floor(r.author.playtime_forever / 60)
+                }));
 
-                let validReviews = reviewsRaw
-                    .filter(r => isFunnyReview(r.review)) 
+            // Eğer sıkı filtrede yeterli yorum çıkmadıysa gevşek modda tekrar tara
+            if (validReviews.length < 5) {
+                const looseReviews = reviewsRaw
+                    .filter(r => isReviewValid(r.review, false)) // Gevşek Mod
                     .map(r => ({
                         text: maskGameName(r.review, game.name),
                         playtime: Math.floor(r.author.playtime_forever / 60)
                     }));
+                
+                // Tekrarları önlemek için birleştirme mantığı (basitçe ekliyoruz)
+                validReviews = [...validReviews, ...looseReviews];
+                // Benzersiz yap (Set kullanarak)
+                validReviews = [...new Map(validReviews.map(item => [item.text, item])).values()];
+            }
 
-                // validReviews = shuffleArray(validReviews); // İsteğe bağlı karıştırma
+            // Hala çok azsa bu oyunu atla (Kullanıcıya boş oyun göstermektense hiç gösterme)
+            if (validReviews.length < 3) continue;
 
-                if (validReviews.length < 3) continue;
+            // 3. ADIM: Oyun Detaylarını Çek (Opsiyonel - Hata verirse oyun iptal olmasın)
+            let gameDetails = { developer: "Bilinmiyor", date: "Belirtilmemiş", likes: "?" };
+            try {
+                const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
+                const detailRes = await axios.get(detailsUrl, { timeout: 2000 });
+                if(detailRes.data && detailRes.data[game.id] && detailRes.data[game.id].success) {
+                    const d = detailRes.data[game.id].data;
+                    gameDetails = {
+                        developer: d.developers ? d.developers[0] : "Bilinmiyor",
+                        date: d.release_date ? d.release_date.date : "Belirtilmemiş",
+                        likes: d.recommendations ? d.recommendations.total.toLocaleString() : "Az"
+                    };
+                }
+            } catch (detErr) {
+                // Detay çekilemezse varsayılanlarla devam et, sorun yok.
+            }
 
-                resultData.push({
-                    id: game.id,
-                    name: game.name,
-                    category: game.tags.join(', '),
-                    image: imageUrl,
-                    details: gameDetails, // Detayları frontend'e gönder
-                    reviews: validReviews.slice(0, 10)
-                });
-            } catch (innerErr) { continue; }
+            resultData.push({
+                id: game.id,
+                name: game.name,
+                category: game.tags.join(', '),
+                image: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`,
+                details: gameDetails,
+                reviews: shuffleArray(validReviews).slice(0, 15) // En fazla 15 yorum gönder
+            });
+
+        } catch (err) {
+            console.log(`Hata (${game.name}): ${err.message}`);
+            continue;
         }
+    }
+    
+    if (resultData.length === 0) {
+        res.status(500).json({ error: "Yeterli veri bulunamadı." });
+    } else {
         res.json(resultData);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Veri çekilemedi" });
     }
 });
 
