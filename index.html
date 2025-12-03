@@ -4,15 +4,10 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     
-    <title>GameGuessr - Steam Yorumlarından Oyun Tahmin Et</title>
+    <title>GameGuessr - Türkçe</title>
     <meta name="description" content="Steam kullanıcı yorumlarından oyunu tahmin et!">
-    <meta name="robots" content="index, follow">
-    <meta property="og:title" content="GameGuessr">
-    <meta property="og:image" content="https://gameguessr.com.tr/logo.png">
-    
     <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="apple-touch-icon" href="/logo.png">
-
+    
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-FKSF680D58"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -39,7 +34,6 @@
               "container-dark": "#2a475e",
               "steam-dark": "#1b2838",
               "steam-darker": "#111c22",
-              "steam-component": "#2a475e",
               "steam-text-light": "#c7d5e0",
               "steam-text-dim": "#91b5ca",
               "steam-accent": "#66c0f4",
@@ -48,42 +42,26 @@
               "secondary-accent": "#4a5e70",
               "destructive-accent": "#c53333",
             },
-            fontFamily: {
-              "display": ["Inter", "sans-serif"]
-            },
+            fontFamily: { "display": ["Inter", "sans-serif"] },
           },
         },
       }
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        body { font-family: 'Inter', sans-serif; background-color: #1b2838; color: #c7d5e0; }
         .bg-gradient-steam { background-image: linear-gradient(to right, #66c0f4, #4a95c2); }
-        .bg-gradient-steam:hover { background-image: linear-gradient(to right, #77c9f5, #5aa4d1); }
-        
         .screen-section { display: none; }
         .screen-section.active { display: flex; animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Modal Overlay */
+        
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 50;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.2s;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 50;
+            justify-content: center; align-items: center; animation: fadeIn 0.2s;
         }
 
         .loader {
-            border: 4px solid #1b2838;
-            border-top: 4px solid #66c0f4;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid #1b2838; border-top: 4px solid #66c0f4; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
@@ -93,156 +71,152 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* AUTOCOMPLETE STİLİ (YENİ) */
+        /* AUTOCOMPLETE STİLİ (TEXTBOX'IN ALTINDA) */
         #suggestion-list {
             position: absolute;
-            background: #171a21;
+            top: 100%; /* Tam altına yapış */
+            left: 0;
+            right: 0;
+            background: #2a475e;
             border: 1px solid #66c0f4;
-            width: 100%;
             max-height: 200px;
             overflow-y: auto;
             z-index: 50;
             border-radius: 0 0 8px 8px;
             display: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         #suggestion-list div {
             padding: 10px;
             cursor: pointer;
             color: #c7d5e0;
-            border-bottom: 1px solid #2a475e;
+            border-bottom: 1px solid #1b2838;
         }
         #suggestion-list div:hover {
             background-color: #66c0f4;
             color: black;
         }
         
-        /* BULANIK RESİM (YENİ) */
+        /* BULANIK RESİM AYARI */
         .blur-hint { filter: blur(15px); transition: filter 0.5s; }
-        .blur-hint:hover { filter: blur(5px); }
+        .blur-hint:hover { filter: blur(8px); } /* Hoverda hala biraz bulanık */
     </style>
 </head>
-<body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden">
+<body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden flex flex-col">
 
-    <div id="screen-home" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
-        <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
-        
-        <div class="relative z-10 flex flex-col items-center gap-8">
-            <div class="flex flex-col items-center gap-2"> <svg class="w-20 h-20 text-primary drop-shadow-[0_0_15px_rgba(102,192,244,0.5)]" fill="currentColor" viewBox="0 0 24 24">
+    <div id="screen-home" class="screen-section h-full flex-col items-center justify-center p-4 relative">
+        <div class="absolute inset-0 z-0 bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
+        <div class="z-10 flex flex-col items-center gap-6">
+            <div class="flex flex-col items-center gap-2">
+                <svg class="w-20 h-20 text-primary drop-shadow-[0_0_15px_rgba(102,192,244,0.5)]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
                 </svg>
-                <h1 class="text-6xl font-black tracking-tight drop-shadow-lg logo-text">GameGuessr</h1>
+                <h1 class="text-6xl font-black logo-text drop-shadow-lg" style="font-family: 'Arial Black', sans-serif;">GameGuessr</h1>
             </div>
-
-            <div class="bg-container-dark/80 p-8 rounded-2xl shadow-2xl backdrop-blur-sm border border-white/10 w-full max-w-sm flex flex-col items-center gap-6">
-                <button onclick="startFlow()" class="w-full h-14 bg-gradient-steam text-[#1b2838] text-xl font-bold rounded-xl shadow-lg hover:scale-105 transition-transform">
-                    OYNA
-                </button>
-
-                <label class="flex items-center gap-3 cursor-pointer group select-none">
+            <div class="bg-container-dark/90 p-8 rounded-lg shadow-2xl border border-white/10 w-full max-w-sm flex flex-col gap-6">
+                <button onclick="startFlow()" class="w-full h-14 bg-gradient-steam text-[#1b2838] text-xl font-bold rounded hover:brightness-110 transition">OYNA</button>
+                <label class="flex items-center gap-3 cursor-pointer group select-none justify-center">
                     <input type="checkbox" id="profanityCheck" class="w-5 h-5 rounded border-gray-500 bg-steam-darker text-primary focus:ring-0">
                     <span class="text-gray-300 group-hover:text-white transition-colors">Küfür Sansürü (Aile Modu)</span>
                 </label>
             </div>
-            
-            <p class="text-white/40 text-sm mt-10">Oyuncuların Gerçek Yorumlarından Oyunu Tahmin Et</p>
+            <div class="max-w-2xl text-center text-steam-text-dim text-xs mt-10 leading-relaxed opacity-60">
+                <p>GameGuessr, Steam üzerindeki binlerce oyunun gerçek kullanıcı yorumlarını kullanarak hazırlanmış ücretsiz bir bilgi yarışmasıdır. Aksiyon, RPG, Strateji gibi kategorilerde bilginizi test edin.</p>
+            </div>
         </div>
     </div>
 
-    <div id="screen-login" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
-        <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1593305842323-91bb1679415c?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-10 blur-md"></div>
-        <div class="relative z-10 flex w-full max-w-md flex-col items-center rounded-lg bg-[#2a475e] p-8 shadow-2xl">
-            <h2 class="text-2xl font-bold text-white mb-4">Kimsin Sen?</h2>
-            <div class="w-full">
-                <input id="usernameInput" class="form-input flex w-full min-w-0 flex-1 rounded-lg border-2 border-transparent bg-[#1b2838] p-4 text-[#c7d5e0] placeholder:text-[#91b5ca] focus:border-primary focus:outline-none focus:ring-0 text-center" placeholder="Kullanıcı Adı" value=""/>
-            </div>
-            <div class="flex w-full gap-3 mt-4 justify-center">
-                <button onclick="showScreen('screen-home')" class="px-6 py-3 rounded-lg bg-gray-600 text-white font-bold hover:bg-gray-500">Geri</button>
-                <button onclick="loginUser()" class="flex-1 px-6 py-3 rounded-lg bg-primary text-[#1b2838] font-bold hover:bg-white transition-colors">
-                    Devam Et
-                </button>
+    <div id="screen-login" class="screen-section h-full flex-col items-center justify-center p-4">
+        <div class="bg-container-dark p-8 rounded-lg shadow-2xl w-full max-w-md border border-white/10">
+            <h2 class="text-2xl font-bold text-white mb-4 text-center">Oyuncu Adı</h2>
+            <input id="usernameInput" class="w-full rounded bg-[#1b2838] border border-[#66c0f4] p-4 text-white text-center focus:ring-2 focus:ring-primary" placeholder="İsminiz..." autocomplete="off" />
+            <div class="flex gap-3 mt-4">
+                <button onclick="showScreen('screen-home')" class="px-6 py-3 rounded bg-secondary-accent text-white font-bold hover:bg-opacity-80">Geri</button>
+                <button onclick="loginUser()" class="flex-1 px-6 py-3 rounded bg-gradient-steam text-[#1b2838] font-bold hover:brightness-110 transition-colors">Devam Et</button>
             </div>
         </div>
     </div>
 
     <div id="screen-category" class="screen-section flex-col min-h-screen">
-        <header class="flex items-center justify-between border-b border-white/10 px-4 sm:px-10 py-3 bg-[#171a21]">
-            <div class="flex items-center gap-3 text-white cursor-pointer" onclick="confirmExit()">
+        <header class="flex justify-between items-center p-4 bg-[#171a21] border-b border-white/10">
+            <div class="flex items-center gap-3 cursor-pointer hover:text-primary" onclick="confirmExit()">
                 <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 <h2 class="text-xl font-bold logo-text">GameGuessr</h2>
             </div>
-            <button onclick="logout()" class="rounded-lg h-8 px-3 bg-steam-component text-xs font-bold hover:bg-white hover:text-black transition-colors">Çıkış Yap</button>
+            <button onclick="logout()" class="text-xs bg-secondary-accent px-3 py-1 rounded text-white font-bold hover:bg-white hover:text-black transition">Çıkış</button>
         </header>
-        
-        <main class="flex flex-col flex-1 p-4 sm:px-10 md:px-20">
-            <div class="flex flex-col gap-2 pt-6 pb-6">
-                <p id="welcomeText" class="text-white text-3xl font-black">Hoşgeldin</p>
-                <div class="flex justify-between items-end border-b border-white/10 pb-4">
-                    <p class="text-white/60 text-base">Bir kategori seç</p>
-                </div>
-            </div>
-            <div id="categoryGrid" class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 pb-10">
-                </div>
+        <main class="p-6 flex-1 flex flex-col items-center">
+            <h2 class="text-3xl font-black text-white mb-2">Hoşgeldin, <span id="welcomeText" class="text-primary"></span></h2>
+            <p class="text-steam-text-dim mb-6">Bir kategori seç</p>
+            <div id="categoryGrid" class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 w-full max-w-4xl"></div>
         </main>
     </div>
 
-    <div id="screen-loading" class="screen-section flex-col items-center justify-center h-screen">
+    <div id="screen-loading" class="screen-section h-full flex-col items-center justify-center">
         <div class="loader mb-4"></div>
-        <p class="text-xl font-bold text-primary">Yükleniyor...</p>
-        <p class="text-sm text-steam-text-dim">En komik yorumlar hazırlanıyor</p>
+        <p class="text-xl font-bold text-primary">Veriler Çekiliyor...</p>
     </div>
 
     <div id="screen-game" class="screen-section flex-col min-h-screen">
-        <header class="flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
-            <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="confirmExit()" title="Çıkış Yap">
-                <div class="size-8 text-primary group-hover:rotate-12 transition-transform">
-                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-                </div>
-                <div class="flex flex-col">
-                    <h2 class="font-bold hidden sm:block logo-text">GameGuessr</h2>
-                    <span id="gameCategoryDisplay" class="text-xs text-primary font-bold sm:hidden block">...</span>
-                </div>
-            </div>
-            
-            <div class="flex gap-4 sm:gap-9">
-                <span id="scoreDisplay" class="text-primary font-medium">Puan: 0</span>
-                <span id="gameProgress" class="text-white font-medium">1/10</span>
+        <header class="flex justify-between items-center p-4 bg-[#171a21] border-b border-white/10">
+            <div class="cursor-pointer" onclick="confirmExit()">
+                <div class="text-xs text-steam-text-dim">Kategori</div>
+                <div id="gameCategoryDisplay" class="text-primary font-bold">...</div> </div>
+            <div class="font-bold text-white"><span id="scoreDisplay" class="text-primary">0</span> Puan</div>
+            <div class="text-right">
+                <span id="gameProgress" class="text-white font-bold">1/10</span>
+                <span class="text-[10px] text-steam-text-dim block">OYUN</span>
             </div>
         </header>
 
-        <main class="flex flex-col items-center gap-6 p-4 mt-4 w-full max-w-4xl mx-auto flex-1">
+        <main class="flex flex-col items-center p-4 w-full max-w-3xl mx-auto gap-6 flex-1">
             
-            <div id="hintImageArea" class="hidden w-full h-40 bg-black rounded overflow-hidden relative flex justify-center items-center border-2 border-[#2a475e]">
-                <img id="hintImage" src="" class="h-full w-auto object-cover blur-hint opacity-70">
-                <p class="absolute text-white font-bold drop-shadow-md pointer-events-none">GÖRSEL İPUCU</p>
-            </div>
-
-            <div class="w-full bg-container-dark p-6 rounded-lg shadow-lg relative border border-white/5 min-h-[180px] flex flex-col justify-center">
-                <div id="reviewCountBadge" class="absolute top-4 right-4 bg-black/40 text-primary text-xs font-bold px-3 py-1 rounded-full">Yorum 1/10</div>
-                <div class="flex flex-col gap-3">
-                    <p class="text-primary text-lg font-bold">Oyuncu Yorumu</p>
-                    <p id="reviewText" class="text-white text-lg font-normal leading-relaxed italic">"..."</p>
-                    
-                    <div class="mt-4 border-t border-white/10 pt-2 flex items-center gap-2 text-steam-text-dim text-sm">
-                        <span class="material-symbols-outlined text-base">schedule</span>
-                        <span id="playtimeText">Oynama Süresi: ...</span>
+            <div id="hintImageArea" class="hidden w-full bg-[#16202d] rounded-lg overflow-hidden relative flex flex-col sm:flex-row border-2 border-[#2a475e] shadow-lg">
+                <div class="w-full sm:w-1/2 h-48 relative overflow-hidden bg-black">
+                    <img id="hintImage" src="" class="w-full h-full object-cover blur-hint opacity-80">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <span class="bg-black/50 px-2 py-1 text-white text-xs font-bold rounded">GÖRSEL</span>
+                    </div>
+                </div>
+                <div class="w-full sm:w-1/2 p-4 flex flex-col justify-center gap-3 text-sm">
+                    <h3 class="text-primary font-bold border-b border-white/10 pb-1">Oyun Bilgileri</h3>
+                    <div>
+                        <p class="text-steam-text-dim text-xs">Çıkış Tarihi</p>
+                        <p id="hintDate" class="text-white font-bold tracking-wide">...</p>
+                    </div>
+                    <div>
+                        <p class="text-steam-text-dim text-xs">İnceleme Sayısı</p>
+                        <p id="hintReviews" class="text-white font-bold tracking-wide">...</p>
                     </div>
                 </div>
             </div>
 
+            <div class="w-full bg-container-dark p-6 rounded-lg shadow-lg relative border border-white/5 min-h-[180px] flex flex-col justify-center">
+                <div class="absolute top-0 right-0 bg-primary text-[#1b2838] px-2 py-1 text-xs font-bold rounded-bl">Yorum</div>
+                <p id="reviewText" class="text-[#c7d5e0] text-lg italic leading-relaxed text-center">"..."</p>
+                <div class="mt-4 pt-4 border-t border-white/10 flex justify-center gap-4 text-xs text-steam-text-dim">
+                    <span id="playtimeText">🕐 ... saat</span>
+                </div>
+            </div>
+
             <div class="flex gap-2 w-full justify-center">
-                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel (-15)</button>
+                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Bilgi Kartı (-15)</button>
                 <button onclick="useHint('word')" id="btnHintWord" class="px-4 py-2 bg-[#4d3a2c] border border-orange-500/50 text-orange-300 hover:bg-orange-900 text-xs font-bold rounded transition">🔤 Harf (-10)</button>
                 <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-5)</button>
             </div>
 
             <div class="w-full max-w-lg flex flex-col items-center gap-4 relative">
-                <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 text-base focus:ring-2 focus:ring-primary" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+                <div class="relative w-full">
+                    <input id="guessInput" class="w-full rounded-lg bg-[#1b2838] border border-[#66c0f4] p-4 text-white placeholder:text-gray-500 focus:ring-2 focus:ring-primary focus:outline-none" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+                    
+                    <div id="suggestion-list"></div> 
+                </div>
                 
-                <div id="suggestion-list"></div> <p id="wordHintText" class="text-center text-primary font-mono mt-2 tracking-widest text-sm h-5 font-bold"></p>
+                <p id="wordHintText" class="text-center text-primary font-mono mt-2 tracking-widest text-sm h-5 font-bold"></p>
 
                 <div class="flex w-full gap-3">
-                    <button onclick="checkGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors">Tahmin Et</button>
-                    <button onclick="passGame()" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors">Pas Geç</button>
+                    <button onclick="checkGuess()" class="flex-1 h-12 bg-gradient-steam text-[#1b2838] font-bold rounded hover:brightness-110 transition">TAHMİN ET</button>
+                    <button onclick="passGame()" class="px-6 bg-destructive-accent text-white font-bold rounded hover:bg-red-600 transition">PAS</button>
                 </div>
             </div>
 
@@ -252,42 +226,26 @@
         </main>
     </div>
 
-    <div id="screen-result" class="screen-section flex-col min-h-screen pb-10">
-        <div class="w-full max-w-[960px] mx-auto px-4 sm:px-10 py-5">
-            <div class="flex flex-col gap-2 p-4">
-                <p class="text-white text-4xl font-black">Oyun Bitti</p>
-                <div class="flex gap-4 items-baseline">
-                    <p id="finalScoreDisplay" class="text-steam-text-dim text-xl">Bu Oyun: 0</p>
-                    <p id="sessionBestDisplay" class="text-primary text-xl font-bold">Kategori Rekoru: 0</p>
-                </div>
-            </div>
-
-            <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4 p-4"></div>
-
-            <h2 class="text-white text-2xl font-bold px-4 pt-8 pb-4">Sıralama (<span id="resultCategoryTitle">...</span>)</h2>
-            <div class="px-4">
-                <div class="overflow-hidden rounded-lg border border-[#325467] bg-steam-darker">
-                    <table class="w-full">
-                        <thead class="bg-[#192a34]">
-                            <tr><th class="px-4 py-3 text-left text-primary">#</th><th class="px-4 py-3 text-left text-primary">Kullanıcı</th><th class="px-4 py-3 text-left text-primary">Puan</th></tr>
-                        </thead>
-                        <tbody id="leaderboardBody"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="flex justify-center pt-8">
-                <button onclick="initCategories()" class="h-12 px-8 bg-primary text-steam-darker font-bold rounded-lg hover:bg-white transition-colors">Kategorilere Dön</button>
-            </div>
+    <div id="screen-result" class="screen-section flex-col min-h-screen p-4 items-center">
+        <h2 class="text-4xl font-black text-white mb-2">OYUN BİTTİ</h2>
+        <p id="finalScoreDisplay" class="text-xl text-primary mb-8">Puan: 0</p>
+        <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 w-full max-w-4xl mb-8"></div>
+        <h3 class="text-xl font-bold text-white mb-4 w-full max-w-2xl text-left">Sıralama</h3>
+        <div class="w-full max-w-2xl bg-container-dark rounded border border-white/10 mb-8">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-[#171a21] text-primary"><tr><th class="p-3">#</th><th>Oyuncu</th><th>Puan</th></tr></thead>
+                <tbody id="leaderboardBody"></tbody>
+            </table>
         </div>
+        <button onclick="initCategories()" class="px-8 py-3 bg-gradient-steam text-[#1b2838] font-bold rounded hover:brightness-110">Kategorilere Dön</button>
     </div>
 
     <div id="exitModal" class="modal-overlay">
-        <div class="bg-container-dark p-6 rounded-lg shadow-2xl max-w-sm w-full text-center border border-white/10">
+        <div class="bg-container-dark p-8 rounded shadow-2xl max-w-sm w-full text-center border border-white/10">
             <h3 class="text-xl font-bold text-white mb-2">Çıkmak istiyor musun?</h3>
-            <p class="text-steam-text-dim mb-6">Mevcut oyun ilerlemen kaybolacak.</p>
+            <p class="text-steam-text-dim mb-6 text-sm">Mevcut oyun iptal edilecek.</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="closeExitModal()" class="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-500">İptal</button>
+                <button onclick="closeExitModal()" class="px-4 py-2 rounded bg-secondary-accent text-white hover:bg-gray-500">İptal</button>
                 <button onclick="doExit()" class="px-4 py-2 rounded bg-destructive-accent text-white hover:bg-red-600 font-bold">Çıkış Yap</button>
             </div>
         </div>
@@ -315,11 +273,7 @@
             { name: "Komedi", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/265930/header.jpg" }
         ];
 
-        let state = {
-            username: "", score: 0, currentCategoryName: "", highScores: {}, 
-            games: [], currentGameIndex: 0, currentReviewIndex: 0, currentPot: 100, 
-            history: [], filterProfanity: false
-        };
+        let state = { username: "", score: 0, currentCategoryName: "", highScores: {}, games: [], currentGameIndex: 0, currentReviewIndex: 0, currentPot: 100, history: [], filterProfanity: false };
 
         window.onload = async function() {
             showScreen('screen-home');
@@ -363,8 +317,12 @@
         }
 
         function startGame() { showScreen('screen-game'); loadLevel(); }
-        function loadLevel() { if(state.currentGameIndex >= state.games.length) { endGame(); return; } state.currentReviewIndex = 0; state.currentPot = 100; document.getElementById('hintImageArea').classList.add('hidden'); document.getElementById('wordHintText').innerText = ""; document.getElementById('btnHintImage').disabled = false; document.getElementById('btnHintWord').disabled = false; document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('btnHintWord').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('feedbackMsg').innerText = ""; updateUI(); }
-        
+        function loadLevel() { if(state.currentGameIndex >= state.games.length) { endGame(); return; } state.currentReviewIndex = 0; state.currentPot = 100; 
+            document.getElementById('hintImageArea').classList.add('hidden'); document.getElementById('wordHintText').innerText = ""; 
+            const btnImg = document.getElementById('btnHintImage'); btnImg.disabled = false; btnImg.classList.remove('opacity-50', 'cursor-not-allowed');
+            const btnWord = document.getElementById('btnHintWord'); btnWord.disabled = false; btnWord.classList.remove('opacity-50', 'cursor-not-allowed');
+            document.getElementById('feedbackMsg').innerText = ""; updateUI(); 
+        }
         function updateUI() {
             const game = state.games[state.currentGameIndex];
             const rev = game.reviews[state.currentReviewIndex] || {text: "Yorum yok.", playtime: 0};
@@ -382,7 +340,11 @@
             const game = state.games[state.currentGameIndex];
             if (type === 'image') {
                 state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
-                const area = document.getElementById('hintImageArea'); const img = document.getElementById('hintImage'); img.src = game.image; area.classList.remove('hidden');
+                const area = document.getElementById('hintImageArea'); 
+                const img = document.getElementById('hintImage'); img.src = game.image; 
+                document.getElementById('hintDate').innerText = game.date || "Bilinmiyor";
+                document.getElementById('hintReviews').innerText = game.reviews_count || "Bilinmiyor";
+                area.classList.remove('hidden');
                 const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             } else if (type === 'word') {
                 state.currentPot -= 10; if(state.currentPot < 0) state.currentPot = 0;
@@ -394,7 +356,6 @@
 
         function nextReview() { if(state.currentReviewIndex < 9) { state.currentReviewIndex++; state.currentPot -= 5; if(state.currentPot < 0) state.currentPot = 0; updateUI(); } else { document.getElementById('feedbackMsg').innerText = "Son ipucu!"; } }
 
-        // --- AUTOCOMPLETE ---
         const input = document.getElementById('guessInput');
         const list = document.getElementById('suggestion-list');
         input.addEventListener('input', function() {
@@ -425,6 +386,9 @@
             showScreen('screen-result');
             document.getElementById('finalScoreDisplay').innerText = state.score;
             document.getElementById('sessionBestDisplay').innerText = state.highScores[state.currentCategoryName] || state.score;
+            state.highScores[state.currentCategoryName] = state.highScores[state.currentCategoryName] || 0;
+            if(state.score > state.highScores[state.currentCategoryName]) state.highScores[state.currentCategoryName] = state.score;
+
             const grid = document.getElementById('resultGrid'); grid.innerHTML = "";
             state.history.forEach(h => {
                 const div = document.createElement('div'); div.className = `relative aspect-video bg-black rounded border-2 ${h.isCorrect ? 'border-steam-success' : 'border-steam-error'}`;
@@ -432,7 +396,7 @@
                 grid.appendChild(div);
             });
             const tbody = document.getElementById('leaderboardBody'); tbody.innerHTML = "";
-            leaderboard.forEach((p, i) => { const isMe = p.username === state.username ? "bg-primary text-background-dark font-bold" : "text-slate-400 border-b border-white/5"; tbody.innerHTML += `<tr class="${isMe}"><td class="p-3">${i+1}</td><td>${p.username}</td><td>${p.score}</td></tr>`; });
+            leaderboard.forEach((p, i) => { const isMe = p.username === state.username ? "bg-primary text-background-dark font-bold" : "text-steam-text-dim border-b border-white/5"; tbody.innerHTML += `<tr class="${isMe}"><td class="p-3">${i+1}</td><td>${p.username}</td><td>${p.score}</td></tr>`; });
         }
     </script>
     
