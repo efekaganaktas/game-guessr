@@ -9,13 +9,12 @@ app.use(express.json());
 // --- AYARLAR ---
 const PORT = process.env.PORT || 3000;
 
-// OYUN LİSTESİNİ YÜKLE (Hata almamak için try-catch ekledim)
+// OYUN LİSTESİNİ YÜKLE
 let GAME_IDS = [];
 try {
     GAME_IDS = require('./games');
 } catch (e) {
     console.error("HATA: games.js dosyası bulunamadı veya hatalı!", e);
-    // Acil durum için boş liste yerine default 1 oyun koyalım ki sunucu çökmesin
     GAME_IDS = [{ id: 730, name: "Counter-Strike 2", tags: ["Aksiyon"] }];
 }
 
@@ -43,14 +42,14 @@ function shuffleArray(array) {
 
 function isFunnyReview(text) {
     const t = text.toLowerCase().trim();
-    // Yasaklı kelimeler (Siyaset vb.)
-    const forbidden = ["recep tayyip", "rte", "siyaset", "seçim"];
+    const forbidden = ["recep tayyip", "rte", "siyaset", "seçim", "cumhurbaşkanı"];
     for (let f of forbidden) { if (t.includes(f)) return false; }
     
-    // Uzunluk ve İngilizce kontrolü
     if (t.length > 400) return false;
     if (t.length < 20) return false;
-    const commonEnglish = [" the ", " is ", " and ", " this "];
+    
+    // İngilizce yorumları elemek için basit kontrol
+    const commonEnglish = [" the ", " is ", " and ", " this ", " game "];
     let enCount = 0;
     for(let w of commonEnglish) { if(t.includes(w)) enCount++; }
     if (enCount >= 2) return false;
@@ -60,13 +59,13 @@ function isFunnyReview(text) {
 
 // --- API ENDPOINTLERİ ---
 
-// 1. Oyun İsimlerini Getir (Autocomplete İçin)
+// 1. Oyun İsimlerini Getir
 app.get('/api/all-games', (req, res) => {
     const names = GAME_IDS.map(g => g.name);
     res.json(names);
 });
 
-// 2. Oyun Sorusu Getir
+// 2. Oyun Sorusu Getir (GÜNCELLENDİ: Detay Bilgileri Ekledi)
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -77,6 +76,7 @@ app.get('/api/game-quiz', async (req, res) => {
         pool = GAME_IDS.filter(g => g.tags.includes(category));
     }
 
+    // Havuz küçükse rastgele oyunlarla tamamla
     if (pool.length < 10) {
         const others = GAME_IDS.filter(g => !pool.includes(g));
         pool = pool.concat(shuffleArray(others).slice(0, 15 - pool.length));
@@ -91,9 +91,26 @@ app.get('/api/game-quiz', async (req, res) => {
             if (resultData.length >= MAX_GAMES) break;
 
             const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            // "all" filtresi daha çeşitli yorumlar getirir
-            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=100`;
+            const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=50`;
             
+            // Oyun Detaylarını Çek (Yeni Eklenen Kısım)
+            let gameDetails = { developer: "Bilinmiyor", date: "Bilinmiyor", likes: "0" };
+            try {
+                // Not: Steam Store API rate-limit uygulayabilir, bu yüzden hata olursa oyunu patlatmıyoruz.
+                const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
+                const detailRes = await axios.get(detailsUrl);
+                if(detailRes.data && detailRes.data[game.id] && detailRes.data[game.id].success) {
+                    const data = detailRes.data[game.id].data;
+                    gameDetails = {
+                        developer: data.developers ? data.developers[0] : "Bilinmiyor",
+                        date: data.release_date ? data.release_date.date : "Bilinmiyor",
+                        likes: data.recommendations ? data.recommendations.total.toLocaleString() : "0"
+                    };
+                }
+            } catch (detailErr) {
+                console.log(`Detay çekilemedi: ${game.name}`);
+            }
+
             try {
                 const reviewResponse = await axios.get(reviewUrl);
                 const reviewsRaw = reviewResponse.data.reviews;
@@ -107,7 +124,7 @@ app.get('/api/game-quiz', async (req, res) => {
                         playtime: Math.floor(r.author.playtime_forever / 60)
                     }));
 
-                validReviews = shuffleArray(validReviews);
+                // validReviews = shuffleArray(validReviews); // İsteğe bağlı karıştırma
 
                 if (validReviews.length < 3) continue;
 
@@ -116,12 +133,14 @@ app.get('/api/game-quiz', async (req, res) => {
                     name: game.name,
                     category: game.tags.join(', '),
                     image: imageUrl,
+                    details: gameDetails, // Detayları frontend'e gönder
                     reviews: validReviews.slice(0, 10)
                 });
             } catch (innerErr) { continue; }
         }
         res.json(resultData);
     } catch (error) {
+        console.error(error);
         res.status(500).json({ error: "Veri çekilemedi" });
     }
 });

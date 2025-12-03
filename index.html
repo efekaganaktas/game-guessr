@@ -7,19 +7,8 @@
     <title>GameGuessr - Steam Yorumlarından Oyun Tahmin Et</title>
     <meta name="description" content="Steam kullanıcı yorumlarından oyunu tahmin et!">
     <meta name="robots" content="index, follow">
-    <meta property="og:title" content="GameGuessr">
-    <meta property="og:image" content="https://gameguessr.com.tr/logo.png">
     
     <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="apple-touch-icon" href="/logo.png">
-
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FKSF680D58"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-FKSF680D58');
-    </script>
 
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com" rel="preconnect"/>
@@ -65,64 +54,53 @@
         .screen-section.active { display: flex; animation: fadeIn 0.4s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Modal Overlay */
         .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 50;
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.2s;
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 50;
+            justify-content: center; align-items: center; animation: fadeIn 0.2s;
         }
 
         .loader {
-            border: 4px solid #1b2838;
-            border-top: 4px solid #66c0f4;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid #1b2838; border-top: 4px solid #66c0f4;
+            border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .logo-text {
             background: linear-gradient(to right, #66c0f4, #ffffff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* AUTOCOMPLETE STİLİ (YENİ) */
+        /* AUTOCOMPLETE DÜZENLENDİ: ARTIK INPUTUN ALTINDA */
         #suggestion-list {
             position: absolute;
+            top: 100%; /* Inputun tam bittiği yerden başla */
+            left: 0;
             background: #171a21;
             border: 1px solid #66c0f4;
             width: 100%;
             max-height: 200px;
             overflow-y: auto;
-            z-index: 50;
+            z-index: 100;
             border-radius: 0 0 8px 8px;
             display: none;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            margin-top: 4px; /* Hafif boşluk */
         }
         #suggestion-list div {
-            padding: 10px;
-            cursor: pointer;
-            color: #c7d5e0;
-            border-bottom: 1px solid #2a475e;
+            padding: 10px; cursor: pointer; color: #c7d5e0; border-bottom: 1px solid #2a475e;
         }
         #suggestion-list div:hover {
-            background-color: #66c0f4;
-            color: black;
+            background-color: #66c0f4; color: black;
         }
         
-        /* BULANIK RESİM (YENİ) */
         .blur-hint { filter: blur(15px); transition: filter 0.5s; }
         .blur-hint:hover { filter: blur(5px); }
     </style>
 </head>
 <body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden">
 
+    <!-- HOME EKRANI (Aynı kaldı) -->
     <div id="screen-home" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
         <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
         
@@ -148,6 +126,7 @@
         </div>
     </div>
 
+    <!-- LOGIN EKRANI (Aynı kaldı) -->
     <div id="screen-login" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
         <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1593305842323-91bb1679415c?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-10 blur-md"></div>
         <div class="relative z-10 flex w-full max-w-md flex-col items-center rounded-lg bg-[#2a475e] p-8 shadow-2xl">
@@ -164,6 +143,7 @@
         </div>
     </div>
 
+    <!-- KATEGORİ EKRANI (Aynı kaldı) -->
     <div id="screen-category" class="screen-section flex-col min-h-screen">
         <header class="flex items-center justify-between border-b border-white/10 px-4 sm:px-10 py-3 bg-[#171a21]">
             <div class="flex items-center gap-3 text-white cursor-pointer" onclick="confirmExit()">
@@ -191,18 +171,22 @@
         <p class="text-sm text-steam-text-dim">En iyi yorumlar hazırlanıyor</p>
     </div>
 
+    <!-- GAME EKRANI (DÜZENLENDİ) -->
     <div id="screen-game" class="screen-section flex-col min-h-screen">
-        <header class="flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
+        <header class="relative flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
             <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="confirmExit()" title="Çıkış Yap">
                 <div class="size-8 text-primary group-hover:rotate-12 transition-transform">
                     <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 </div>
-                <div class="flex flex-col">
-                    <h2 class="font-bold hidden sm:block logo-text">GameGuessr</h2>
-                    <span id="gameCategoryDisplay" class="text-xs text-primary font-bold sm:hidden block">...</span>
-                </div>
+                <!-- Logoyu Mobilde Gizleyelim ki Kategori Adı Sığsın -->
+                <h2 class="font-bold hidden md:block logo-text">GameGuessr</h2>
             </div>
             
+            <!-- KATEGORİ ADI (ORTADA) -->
+            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+                 <span id="gameCategoryCenter" class="text-primary font-black text-lg sm:text-2xl uppercase tracking-widest drop-shadow-[0_0_10px_rgba(102,192,244,0.3)]">KATEGORİ</span>
+            </div>
+
             <div class="flex gap-4 sm:gap-9">
                 <span id="scoreDisplay" class="text-primary font-medium">Puan: 0</span>
                 <span id="gameProgress" class="text-white font-medium">1/10</span>
@@ -211,9 +195,21 @@
 
         <main class="flex flex-col items-center gap-6 p-4 mt-4 w-full max-w-4xl mx-auto flex-1">
             
-            <div id="hintImageArea" class="hidden w-full h-40 bg-black rounded overflow-hidden relative flex justify-center items-center border-2 border-[#2a475e]">
-                <img id="hintImage" src="" class="h-full w-auto object-cover blur-hint opacity-70">
-                <p class="absolute text-white font-bold drop-shadow-md pointer-events-none">GÖRSEL İPUCU</p>
+            <!-- GÖRSEL İPUCU ALANI (DÜZENLENDİ: SOLDA RESİM, SAĞDA BİLGİ) -->
+            <div id="hintImageArea" class="hidden w-full bg-[#171a21]/90 border border-[#2a475e] rounded-xl overflow-hidden p-4 flex gap-4 transition-all duration-300">
+                <!-- Sol: Görsel -->
+                <div class="w-1/3 min-w-[120px] max-w-[200px] aspect-video relative rounded overflow-hidden border border-white/10 bg-black">
+                     <img id="hintImage" src="" class="w-full h-full object-cover blur-hint opacity-80 hover:opacity-100">
+                </div>
+                <!-- Sağ: Bilgiler -->
+                <div class="flex-1 flex flex-col justify-center gap-2 text-sm">
+                    <h3 class="text-primary font-bold text-lg mb-1">Oyun Bilgileri</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                        <p class="text-steam-text-dim">Yapımcı: <span id="hintDev" class="text-white font-semibold">...</span></p>
+                        <p class="text-steam-text-dim">Çıkış Tarihi: <span id="hintDate" class="text-white font-semibold">...</span></p>
+                        <p class="text-steam-text-dim">İnceleme: <span id="hintLikes" class="text-white font-semibold">...</span></p>
+                    </div>
+                </div>
             </div>
 
             <div class="w-full bg-container-dark p-6 rounded-lg shadow-lg relative border border-white/5 min-h-[180px] flex flex-col justify-center">
@@ -230,15 +226,20 @@
             </div>
 
             <div class="flex gap-2 w-full justify-center">
-                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel (-15)</button>
+                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel & Bilgi (-15)</button>
                 <button onclick="useHint('word')" id="btnHintWord" class="px-4 py-2 bg-[#4d3a2c] border border-orange-500/50 text-orange-300 hover:bg-orange-900 text-xs font-bold rounded transition">🔤 Harf (-10)</button>
                 <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-5)</button>
             </div>
 
             <div class="w-full max-w-lg flex flex-col items-center gap-4 relative">
-                <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 text-base focus:ring-2 focus:ring-primary" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+                <!-- Autocomplete için Relative Parent Gerekli -->
+                <div class="w-full relative">
+                    <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 text-base focus:ring-2 focus:ring-primary" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+                    <!-- Liste Inputun İçinde Değil, Kardeşi Olarak Bu Relative Div İçinde -->
+                    <div id="suggestion-list"></div>
+                </div>
                 
-                <div id="suggestion-list"></div> <p id="wordHintText" class="text-center text-primary font-mono mt-2 tracking-widest text-sm h-5 font-bold"></p>
+                <p id="wordHintText" class="text-center text-primary font-mono mt-0 tracking-widest text-sm h-5 font-bold"></p>
 
                 <div class="flex w-full gap-3">
                     <button onclick="checkGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors">Tahmin Et</button>
@@ -252,6 +253,7 @@
         </main>
     </div>
 
+    <!-- RESULT EKRANI (Aynı kaldı) -->
     <div id="screen-result" class="screen-section flex-col min-h-screen pb-10">
         <div class="w-full max-w-[960px] mx-auto px-4 sm:px-10 py-5">
             <div class="flex flex-col gap-2 p-4">
@@ -297,6 +299,7 @@
         const API_URL = '/api'; 
         let allGameNames = [];
 
+        // KATEGORİLER (Aynı)
         const CATEGORIES = [
             { name: "Karışık", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/header.jpg" },
             { name: "Aksiyon", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/header.jpg" },
@@ -363,26 +366,56 @@
         }
 
         function startGame() { showScreen('screen-game'); loadLevel(); }
-        function loadLevel() { if(state.currentGameIndex >= state.games.length) { endGame(); return; } state.currentReviewIndex = 0; state.currentPot = 100; document.getElementById('hintImageArea').classList.add('hidden'); document.getElementById('wordHintText').innerText = ""; document.getElementById('btnHintImage').disabled = false; document.getElementById('btnHintWord').disabled = false; document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('btnHintWord').classList.remove('opacity-50', 'cursor-not-allowed'); document.getElementById('feedbackMsg').innerText = ""; updateUI(); }
+        function loadLevel() { 
+            if(state.currentGameIndex >= state.games.length) { endGame(); return; } 
+            state.currentReviewIndex = 0; state.currentPot = 100; 
+            
+            // Hint Alanını Sıfırla
+            document.getElementById('hintImageArea').classList.add('hidden'); 
+            document.getElementById('wordHintText').innerText = ""; 
+            
+            // Butonları Sıfırla
+            document.getElementById('btnHintImage').disabled = false; 
+            document.getElementById('btnHintWord').disabled = false; 
+            document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); 
+            document.getElementById('btnHintWord').classList.remove('opacity-50', 'cursor-not-allowed'); 
+            document.getElementById('feedbackMsg').innerText = ""; 
+            
+            updateUI(); 
+        }
         
         function updateUI() {
             const game = state.games[state.currentGameIndex];
             const rev = game.reviews[state.currentReviewIndex] || {text: "Yorum yok.", playtime: 0};
-            document.getElementById('gameCategoryDisplay').innerText = state.currentCategoryName;
-            document.getElementById('scoreDisplay').innerText = state.score;
+            
+            // BAŞLIĞI GÜNCELLE
+            document.getElementById('gameCategoryCenter').innerText = state.currentCategoryName;
+            
+            document.getElementById('scoreDisplay').innerText = `Puan: ${state.score}`;
             document.getElementById('gameProgress').innerText = `${state.currentGameIndex + 1}/10`;
             let txt = rev.text; if(state.filterProfanity) txt = cleanText(txt);
             document.getElementById('reviewText').innerText = `"${txt}"`;
             document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
             document.getElementById('playtimeText').innerHTML = `${rev.playtime} saat oynadı`;
             const inp = document.getElementById('guessInput'); inp.value = ""; inp.focus(); document.getElementById('suggestion-list').style.display = 'none';
+
+            // İpucu Bilgilerini Doldur (Ama Gizli)
+            const details = game.details || { developer: "Bilinmiyor", date: "?", likes: "0" };
+            document.getElementById('hintDev').innerText = details.developer;
+            document.getElementById('hintDate').innerText = details.date;
+            document.getElementById('hintLikes').innerText = details.likes;
+            document.getElementById('hintImage').src = game.image;
         }
 
         function useHint(type) {
             const game = state.games[state.currentGameIndex];
             if (type === 'image') {
                 state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
-                const area = document.getElementById('hintImageArea'); const img = document.getElementById('hintImage'); img.src = game.image; area.classList.remove('hidden');
+                
+                // GÖRSEL İPUCUNU GÖSTER
+                document.getElementById('hintImageArea').classList.remove('hidden');
+                document.getElementById('hintImageArea').classList.add('flex'); // Flex yapısını koru
+                
                 const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             } else if (type === 'word') {
                 state.currentPot -= 10; if(state.currentPot < 0) state.currentPot = 0;
@@ -425,6 +458,8 @@
             showScreen('screen-result');
             document.getElementById('finalScoreDisplay').innerText = state.score;
             document.getElementById('sessionBestDisplay').innerText = state.highScores[state.currentCategoryName] || state.score;
+            document.getElementById('resultCategoryTitle').innerText = state.currentCategoryName;
+            
             const grid = document.getElementById('resultGrid'); grid.innerHTML = "";
             state.history.forEach(h => {
                 const div = document.createElement('div'); div.className = `relative aspect-video bg-black rounded border-2 ${h.isCorrect ? 'border-steam-success' : 'border-steam-error'}`;
