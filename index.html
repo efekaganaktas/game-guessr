@@ -328,8 +328,7 @@
             history: [], filterProfanity: false
         };
 
-        // --- SKOR YÖNETİMİ (YENİ) ---
-        // 5 gün kuralı ve kullanıcıya özel skor saklama
+        // --- SKOR YÖNETİMİ ---
         function getUserDataKey(username) {
             return `gameguessr_data_${username}`;
         }
@@ -337,21 +336,18 @@
         function loadUserHighScores(username) {
             const key = getUserDataKey(username);
             const raw = localStorage.getItem(key);
-            if (!raw) return {}; // Kayıt yoksa boş dön
+            if (!raw) return {};
 
             try {
                 const data = JSON.parse(raw);
-                // 5 Gün Kontrolü (5 * 24 saat * 60 dk * 60 sn * 1000 ms)
                 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
                 const now = Date.now();
 
                 if (now - data.lastSeen > FIVE_DAYS_MS) {
-                    // Süre dolmuş, sil ve boş dön
                     localStorage.removeItem(key);
                     return {};
                 }
 
-                // Süre dolmamış, lastSeen güncelle ve skorları dön
                 data.lastSeen = now;
                 localStorage.setItem(key, JSON.stringify(data));
                 return data.scores || {};
@@ -369,13 +365,11 @@
                 try { data = JSON.parse(raw); } catch (e) {}
             }
 
-            // Mevcut skoru kontrol et
             const currentBest = data.scores[category] || 0;
             if (newScore > currentBest) {
                 data.scores[category] = newScore;
             }
             
-            // Her kayıtta son görülme zamanını güncelle
             data.lastSeen = Date.now();
             localStorage.setItem(key, JSON.stringify(data));
             
@@ -390,11 +384,9 @@
             showScreen('screen-home');
             try { const res = await fetch(`${API_URL}/all-games`); if(res.ok) allGameNames = await res.json(); } catch(e) { console.log("Liste çekilemedi"); }
             
-            // Otomatik giriş kontrolü
             const storedUser = localStorage.getItem('steam_username');
             if (storedUser) {
                 state.username = storedUser;
-                // Skorları yükle
                 state.highScores = loadUserHighScores(state.username);
                 initCategories();
             }
@@ -420,16 +412,23 @@
             
             localStorage.setItem('steam_username', val); 
             state.username = val; 
-            
-            // Login olunca skorları yükle
             state.highScores = loadUserHighScores(state.username);
-            
             initCategories(); 
         }
 
-        function logout() { 
-            // Çıkış yapınca verileri temizle (İstek üzerine)
+        async function logout() { 
+            // Çıkış yapınca sunucuya haber ver ve verileri sil
             if(state.username) {
+                try {
+                    await fetch(`${API_URL}/logout`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ username: state.username })
+                    });
+                } catch (e) {
+                    console.log("Sunucudan çıkış yapılamadı, ancak yerel veri siliniyor.");
+                }
+
                 clearUserData(state.username);
             }
             localStorage.removeItem('steam_username'); 
@@ -451,7 +450,6 @@
                 div.className = "group relative cursor-pointer overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:ring-2 hover:ring-primary h-32";
                 div.onclick = () => fetchGames(cat.name);
                 
-                // SKORU STATE'DEN AL
                 const rec = state.highScores[cat.name] || 0;
                 
                 div.innerHTML = `<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('${cat.img}');"></div><div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors"></div><div class="absolute inset-0 flex flex-col items-center justify-center p-2"><p class="text-white text-xl font-bold uppercase tracking-wider text-center z-10 drop-shadow-lg">${cat.name}</p><p class="text-primary text-sm font-bold mt-1 z-10 drop-shadow-md">Rekor: ${rec}</span></div>`;
@@ -478,11 +476,9 @@
             if(state.currentGameIndex >= state.games.length) { endGame(); return; } 
             state.currentReviewIndex = 0; state.currentPot = 100; 
             
-            // Hint Alanını Sıfırla
             document.getElementById('hintImageArea').classList.add('hidden'); 
             document.getElementById('wordHintText').innerText = ""; 
             
-            // Butonları Sıfırla
             document.getElementById('btnHintImage').disabled = false; 
             document.getElementById('btnHintWord').disabled = false; 
             document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); 
@@ -496,20 +492,18 @@
             const game = state.games[state.currentGameIndex];
             const rev = game.reviews[state.currentReviewIndex] || {text: "Yorum yok.", playtime: 0};
             
-            // BAŞLIĞI GÜNCELLE
             document.getElementById('gameCategoryCenter').innerText = state.currentCategoryName;
-            
             document.getElementById('scoreDisplay').innerText = `Puan: ${state.score}`;
             document.getElementById('gameProgress').innerText = `${state.currentGameIndex + 1}/10`;
             let txt = rev.text; if(state.filterProfanity) txt = cleanText(txt);
             document.getElementById('reviewText').innerText = `"${txt}"`;
             document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
             document.getElementById('playtimeText').innerHTML = `${rev.playtime} saat oynadı`;
+            
             const inp = document.getElementById('guessInput'); inp.value = ""; 
             // inp.focus(); // MOBİL KLAVYE SORUNU İÇİN KALDIRILDI
             document.getElementById('suggestion-list').style.display = 'none';
 
-            // İpucu Bilgilerini Doldur (Ama Gizli)
             const details = game.details || { developer: "Bilinmiyor", date: "?", likes: "0" };
             document.getElementById('hintDev').innerText = details.developer;
             document.getElementById('hintDate').innerText = details.date;
@@ -523,9 +517,8 @@
                 // PUAN DÜZENLEMESİ: -20
                 state.currentPot -= 20; if(state.currentPot < 0) state.currentPot = 0;
                 
-                // GÖRSEL İPUCUNU GÖSTER
                 document.getElementById('hintImageArea').classList.remove('hidden');
-                document.getElementById('hintImageArea').classList.add('flex'); // Flex yapısını koru
+                document.getElementById('hintImageArea').classList.add('flex');
                 
                 const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             } else if (type === 'word') {
@@ -574,19 +567,15 @@
         document.getElementById('guessInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkGuess(); });
 
         async function endGame() {
-            // Skoru sunucuya gönder (Liderlik tablosu için)
             await fetch(`${API_URL}/submit-score`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: state.username, category: state.currentCategoryName, score: state.score}) });
             
-            // Skoru yerel hafızaya kaydet (Kişisel Rekor ve 5 gün kuralı için)
             state.highScores = saveUserHighScore(state.username, state.currentCategoryName, state.score);
 
             const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
             const leaderboard = await res.json();
             showScreen('screen-result');
             
-            // SKORLARI GÖSTER (GÜNCELLENMİŞ STATE KULLANILIYOR)
             document.getElementById('finalScoreDisplay').innerText = `Mevcut Skor : ${state.score}`;
-            // Burada artık local storage'dan gelen güncel rekor görünecek
             document.getElementById('sessionBestDisplay').innerText = `En İyi Skor : ${state.highScores[state.currentCategoryName] || state.score}`;
             document.getElementById('resultCategoryTitle').innerText = state.currentCategoryName;
             

@@ -8,6 +8,7 @@ app.use(express.json());
 
 // --- AYARLAR ---
 const PORT = process.env.PORT || 3000;
+const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000; // 5 Gün
 
 // OYUN LİSTESİNİ YÜKLE
 let GAME_IDS = [];
@@ -19,6 +20,7 @@ try {
 }
 
 // --- GEÇİCİ HAFIZA ---
+// { username, category, score, timestamp }
 let GLOBAL_SCORES = [];
 
 // --- YARDIMCI FONKSİYONLAR ---
@@ -65,7 +67,7 @@ app.get('/api/all-games', (req, res) => {
     res.json(names);
 });
 
-// 2. Oyun Sorusu Getir (GÜNCELLENDİ: Detay Bilgileri Ekledi)
+// 2. Oyun Sorusu Getir
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -76,7 +78,6 @@ app.get('/api/game-quiz', async (req, res) => {
         pool = GAME_IDS.filter(g => g.tags.includes(category));
     }
 
-    // Havuz küçükse rastgele oyunlarla tamamla
     if (pool.length < 10) {
         const others = GAME_IDS.filter(g => !pool.includes(g));
         pool = pool.concat(shuffleArray(others).slice(0, 15 - pool.length));
@@ -93,10 +94,9 @@ app.get('/api/game-quiz', async (req, res) => {
             const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
             const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=50`;
             
-            // Oyun Detaylarını Çek (Yeni Eklenen Kısım)
+            // Oyun Detaylarını Çek
             let gameDetails = { developer: "Bilinmiyor", date: "Bilinmiyor", likes: "0" };
             try {
-                // Not: Steam Store API rate-limit uygulayabilir, bu yüzden hata olursa oyunu patlatmıyoruz.
                 const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
                 const detailRes = await axios.get(detailsUrl);
                 if(detailRes.data && detailRes.data[game.id] && detailRes.data[game.id].success) {
@@ -108,7 +108,7 @@ app.get('/api/game-quiz', async (req, res) => {
                     };
                 }
             } catch (detailErr) {
-                console.log(`Detay çekilemedi: ${game.name}`);
+                // Hata olursa varsayılan değerlerle devam et
             }
 
             try {
@@ -124,8 +124,6 @@ app.get('/api/game-quiz', async (req, res) => {
                         playtime: Math.floor(r.author.playtime_forever / 60)
                     }));
 
-                // validReviews = shuffleArray(validReviews); // İsteğe bağlı karıştırma
-
                 if (validReviews.length < 3) continue;
 
                 resultData.push({
@@ -133,7 +131,7 @@ app.get('/api/game-quiz', async (req, res) => {
                     name: game.name,
                     category: game.tags.join(', '),
                     image: imageUrl,
-                    details: gameDetails, // Detayları frontend'e gönder
+                    details: gameDetails,
                     reviews: validReviews.slice(0, 10)
                 });
             } catch (innerErr) { continue; }
@@ -145,27 +143,51 @@ app.get('/api/game-quiz', async (req, res) => {
     }
 });
 
-// 3. Skor Kaydet
+// 3. Skor Kaydet (Güncellendi: Timestamp ve Güncelleme Mantığı)
 app.post('/api/submit-score', (req, res) => {
     const { username, category, score } = req.body;
     if (!username) return res.status(400).json({ error: "Eksik bilgi" });
     
+    const now = Date.now();
     const existingIndex = GLOBAL_SCORES.findIndex(s => s.username === username && s.category === category);
+    
     if (existingIndex > -1) {
-        if (score > GLOBAL_SCORES[existingIndex].score) GLOBAL_SCORES[existingIndex].score = score;
+        // Kullanıcı varsa, son görülme zamanını güncelle
+        GLOBAL_SCORES[existingIndex].timestamp = now;
+        
+        // Eğer yeni skor daha yüksekse skoru güncelle
+        if (score > GLOBAL_SCORES[existingIndex].score) {
+            GLOBAL_SCORES[existingIndex].score = score;
+        }
     } else {
-        GLOBAL_SCORES.push({ username, category, score });
+        // Yeni kayıt oluştur
+        GLOBAL_SCORES.push({ username, category, score, timestamp: now });
     }
     res.json({ success: true });
 });
 
-// 4. Liderlik Tablosu
+// 4. Liderlik Tablosu (Güncellendi: 5 Gün Kuralı)
 app.get('/api/leaderboard', (req, res) => {
     const category = req.query.category;
+    const now = Date.now();
+
+    // 5 günden eski kayıtları temizle
+    GLOBAL_SCORES = GLOBAL_SCORES.filter(s => (now - s.timestamp) < FIVE_DAYS_MS);
+
     let currentScores = [...GLOBAL_SCORES];
     if (category) currentScores = currentScores.filter(s => s.category === category);
+    
     currentScores.sort((a, b) => b.score - a.score);
     res.json(currentScores.slice(0, 10));
+});
+
+// 5. Çıkış Yap (Yeni Endpoint: Kullanıcıyı Sil)
+app.post('/api/logout', (req, res) => {
+    const { username } = req.body;
+    if (username) {
+        GLOBAL_SCORES = GLOBAL_SCORES.filter(s => s.username !== username);
+    }
+    res.json({ success: true });
 });
 
 // DOSYA SUNUMU
