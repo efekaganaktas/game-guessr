@@ -150,11 +150,11 @@
     <!-- KATEGORİ EKRANI -->
     <div id="screen-category" class="screen-section flex-col min-h-screen">
         <header class="flex items-center justify-between border-b border-white/10 px-4 sm:px-10 py-3 bg-[#171a21]">
-            <div class="flex items-center gap-3 text-white cursor-pointer" onclick="confirmExit()">
+            <div class="flex items-center gap-3 text-white cursor-pointer" onclick="openModal('home')">
                 <svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 <h2 class="text-xl font-bold logo-text">GameGuessr</h2>
             </div>
-            <button onclick="logout()" class="rounded-lg h-8 px-3 bg-steam-component text-xs font-bold hover:bg-white hover:text-black transition-colors">Çıkış Yap</button>
+            <button onclick="openModal('logout')" class="rounded-lg h-8 px-3 bg-steam-component text-xs font-bold hover:bg-white hover:text-black transition-colors">Çıkış Yap</button>
         </header>
         
         <main class="flex flex-col flex-1 p-4 sm:px-10 md:px-20">
@@ -178,7 +178,7 @@
     <!-- GAME EKRANI -->
     <div id="screen-game" class="screen-section flex-col min-h-screen">
         <header class="relative flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
-            <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="confirmExit()" title="Çıkış Yap">
+            <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="openModal('home')" title="Ana Ekrana Dön">
                 <div class="size-8 text-primary group-hover:rotate-12 transition-transform">
                     <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 </div>
@@ -288,13 +288,14 @@
         </div>
     </div>
 
+    <!-- DİNAMİK MODAL -->
     <div id="exitModal" class="modal-overlay">
         <div class="bg-container-dark p-6 rounded-lg shadow-2xl max-w-sm w-full text-center border border-white/10">
-            <h3 class="text-xl font-bold text-white mb-2">Çıkmak istiyor musun?</h3>
-            <p class="text-steam-text-dim mb-6">Mevcut oyun ilerlemen kaybolacak.</p>
+            <h3 id="modalTitle" class="text-xl font-bold text-white mb-2">Çıkmak istiyor musun?</h3>
+            <p id="modalText" class="text-steam-text-dim mb-6">Mevcut oyun ilerlemen kaybolacak.</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="closeExitModal()" class="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-500">İptal</button>
-                <button onclick="doExit()" class="px-4 py-2 rounded bg-destructive-accent text-white hover:bg-red-600 font-bold">Çıkış Yap</button>
+                <button onclick="closeModal()" class="px-4 py-2 rounded bg-gray-600 text-white hover:bg-gray-500">Hayır</button>
+                <button id="modalConfirmBtn" class="px-4 py-2 rounded bg-destructive-accent text-white hover:bg-red-600 font-bold">Evet</button>
             </div>
         </div>
     </div>
@@ -437,9 +438,32 @@
             showScreen('screen-home'); 
         }
         
-        function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
-        function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
-        function doExit() { closeExitModal(); showScreen('screen-home'); }
+        // MODAL FONKSİYONLARI (GÜNCELLENDİ)
+        function openModal(type) {
+            const modal = document.getElementById('exitModal');
+            const title = document.getElementById('modalTitle');
+            const text = document.getElementById('modalText');
+            const btn = document.getElementById('modalConfirmBtn');
+
+            if (type === 'logout') {
+                title.innerText = "Çıkmak istiyor musun?";
+                text.innerText = "Mevcut ilerlemen kaybolacak.";
+                text.style.display = 'block'; // Metni göster
+                btn.onclick = async () => { await logout(); closeModal(); };
+            } else if (type === 'home') {
+                title.innerText = "Ana ekrana git?";
+                text.innerText = ""; // Kullanıcı sadece başlık istediği için metni boşaltıyoruz
+                text.style.display = 'none'; // Metni gizle
+                btn.onclick = () => { doExit(); closeModal(); };
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('exitModal').style.display = 'none'; }
+        
+        // Ana Ekrana Gitme Fonksiyonu
+        function doExit() { showScreen('screen-home'); }
 
         function initCategories() {
             document.getElementById('welcomeText').innerText = `Hoşgeldin, ${state.username}`;
