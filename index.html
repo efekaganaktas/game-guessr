@@ -94,13 +94,17 @@
             background-color: #66c0f4; color: black;
         }
         
-        .blur-hint { filter: blur(15px); transition: filter 0.5s; }
-        .blur-hint:hover { filter: blur(5px); }
+        .blur-hint { 
+            filter: blur(5px); /* Bulanıklık seviyesi sabitlendi */
+            pointer-events: none; /* Tıklama ve fare olayları devre dışı bırakıldı */
+            user-select: none; /* Metin seçimi engellendi */
+            -webkit-touch-callout: none; /* iOS'ta uzun basma menüsü engellendi */
+         }
     </style>
 </head>
 <body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden">
 
-    <!-- HOME EKRANI (Aynı kaldı) -->
+    <!-- HOME EKRANI -->
     <div id="screen-home" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
         <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1612287232817-60f8f6a92f81?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-20 blur-sm"></div>
         
@@ -126,7 +130,7 @@
         </div>
     </div>
 
-    <!-- LOGIN EKRANI (Aynı kaldı) -->
+    <!-- LOGIN EKRANI -->
     <div id="screen-login" class="screen-section relative h-full w-full flex-col items-center justify-center p-4">
         <div class="absolute inset-0 z-0 h-full w-full bg-[url('https://images.unsplash.com/photo-1593305842323-91bb1679415c?fit=max&fm=jpg&q=80&w=1080')] bg-cover bg-center opacity-10 blur-md"></div>
         <div class="relative z-10 flex w-full max-w-md flex-col items-center rounded-lg bg-[#2a475e] p-8 shadow-2xl">
@@ -143,7 +147,7 @@
         </div>
     </div>
 
-    <!-- KATEGORİ EKRANI (Aynı kaldı) -->
+    <!-- KATEGORİ EKRANI -->
     <div id="screen-category" class="screen-section flex-col min-h-screen">
         <header class="flex items-center justify-between border-b border-white/10 px-4 sm:px-10 py-3 bg-[#171a21]">
             <div class="flex items-center gap-3 text-white cursor-pointer" onclick="confirmExit()">
@@ -171,7 +175,7 @@
         <p class="text-sm text-steam-text-dim">En iyi yorumlar hazırlanıyor</p>
     </div>
 
-    <!-- GAME EKRANI (DÜZENLENDİ) -->
+    <!-- GAME EKRANI -->
     <div id="screen-game" class="screen-section flex-col min-h-screen">
         <header class="relative flex items-center justify-between border-b border-black/20 bg-[#171a21] px-4 py-3">
             <div class="flex items-center gap-2 text-white cursor-pointer group" onclick="confirmExit()" title="Çıkış Yap">
@@ -195,11 +199,11 @@
 
         <main class="flex flex-col items-center gap-6 p-4 mt-4 w-full max-w-4xl mx-auto flex-1">
             
-            <!-- GÖRSEL İPUCU ALANI (DÜZENLENDİ: SOLDA RESİM, SAĞDA BİLGİ) -->
+            <!-- GÖRSEL İPUCU ALANI -->
             <div id="hintImageArea" class="hidden w-full bg-[#171a21]/90 border border-[#2a475e] rounded-xl overflow-hidden p-4 flex gap-4 transition-all duration-300">
                 <!-- Sol: Görsel -->
                 <div class="w-1/3 min-w-[120px] max-w-[200px] aspect-video relative rounded overflow-hidden border border-white/10 bg-black">
-                     <img id="hintImage" src="" class="w-full h-full object-cover blur-hint opacity-80 hover:opacity-100">
+                     <img id="hintImage" src="" class="w-full h-full object-cover blur-hint opacity-80">
                 </div>
                 <!-- Sağ: Bilgiler -->
                 <div class="flex-1 flex flex-col justify-center gap-2 text-sm">
@@ -253,19 +257,17 @@
         </main>
     </div>
 
-    <!-- RESULT EKRANI (DÜZENLENDİ) -->
+    <!-- RESULT EKRANI -->
     <div id="screen-result" class="screen-section flex-col min-h-screen pb-10">
         <div class="w-full max-w-[960px] mx-auto px-4 sm:px-10 py-5">
             <div class="flex flex-col gap-2 p-4">
                 <p class="text-white text-4xl font-black">Oyun Bitti</p>
-                <!-- DÜZENLENDİ: Alt çizgi eklendi (border-b), gap ayarlandı -->
                 <div class="flex flex-wrap gap-6 items-end border-b border-white/10 pb-4">
                     <p id="finalScoreDisplay" class="text-steam-text-dim text-xl">Mevcut Skor : 0</p>
                     <p id="sessionBestDisplay" class="text-primary text-xl font-bold">En İyi Skor : 0</p>
                 </div>
             </div>
 
-            <!-- DÜZENLENDİ: Görseller biraz daha büyük (minmax 160px) ve daha yakın (gap-2) -->
             <div id="resultGrid" class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 p-4"></div>
 
             <h2 class="text-white text-2xl font-bold px-4 pt-8 pb-4">Sıralama (<span id="resultCategoryTitle">...</span>)</h2>
@@ -301,7 +303,7 @@
         const API_URL = '/api'; 
         let allGameNames = [];
 
-        // KATEGORİLER (Aynı)
+        // KATEGORİLER
         const CATEGORIES = [
             { name: "Karışık", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/4000/header.jpg" },
             { name: "Aksiyon", img: "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1091500/header.jpg" },
@@ -326,15 +328,116 @@
             history: [], filterProfanity: false
         };
 
+        // --- SKOR YÖNETİMİ (YENİ) ---
+        // 5 gün kuralı ve kullanıcıya özel skor saklama
+        function getUserDataKey(username) {
+            return `gameguessr_data_${username}`;
+        }
+
+        function loadUserHighScores(username) {
+            const key = getUserDataKey(username);
+            const raw = localStorage.getItem(key);
+            if (!raw) return {}; // Kayıt yoksa boş dön
+
+            try {
+                const data = JSON.parse(raw);
+                // 5 Gün Kontrolü (5 * 24 saat * 60 dk * 60 sn * 1000 ms)
+                const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+                const now = Date.now();
+
+                if (now - data.lastSeen > FIVE_DAYS_MS) {
+                    // Süre dolmuş, sil ve boş dön
+                    localStorage.removeItem(key);
+                    return {};
+                }
+
+                // Süre dolmamış, lastSeen güncelle ve skorları dön
+                data.lastSeen = now;
+                localStorage.setItem(key, JSON.stringify(data));
+                return data.scores || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveUserHighScore(username, category, newScore) {
+            const key = getUserDataKey(username);
+            let data = { scores: {}, lastSeen: Date.now() };
+            
+            const raw = localStorage.getItem(key);
+            if (raw) {
+                try { data = JSON.parse(raw); } catch (e) {}
+            }
+
+            // Mevcut skoru kontrol et
+            const currentBest = data.scores[category] || 0;
+            if (newScore > currentBest) {
+                data.scores[category] = newScore;
+            }
+            
+            // Her kayıtta son görülme zamanını güncelle
+            data.lastSeen = Date.now();
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            return data.scores;
+        }
+
+        function clearUserData(username) {
+            localStorage.removeItem(getUserDataKey(username));
+        }
+
         window.onload = async function() {
             showScreen('screen-home');
             try { const res = await fetch(`${API_URL}/all-games`); if(res.ok) allGameNames = await res.json(); } catch(e) { console.log("Liste çekilemedi"); }
+            
+            // Otomatik giriş kontrolü
+            const storedUser = localStorage.getItem('steam_username');
+            if (storedUser) {
+                state.username = storedUser;
+                // Skorları yükle
+                state.highScores = loadUserHighScores(state.username);
+                initCategories();
+            }
         };
 
         function showScreen(id) { document.querySelectorAll('.screen-section').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        function startFlow() { state.filterProfanity = document.getElementById('profanityCheck').checked; const stored = localStorage.getItem('steam_username'); if(stored) { state.username = stored; initCategories(); } else { showScreen('screen-login'); } }
-        function loginUser() { const val = document.getElementById('usernameInput').value.trim(); if(!val) return alert("Lütfen bir isim girin!"); localStorage.setItem('steam_username', val); state.username = val; initCategories(); }
-        function logout() { localStorage.removeItem('steam_username'); showScreen('screen-home'); }
+        
+        function startFlow() { 
+            state.filterProfanity = document.getElementById('profanityCheck').checked; 
+            const stored = localStorage.getItem('steam_username'); 
+            if(stored) { 
+                state.username = stored; 
+                state.highScores = loadUserHighScores(state.username);
+                initCategories(); 
+            } else { 
+                showScreen('screen-login'); 
+            } 
+        }
+
+        function loginUser() { 
+            const val = document.getElementById('usernameInput').value.trim(); 
+            if(!val) return alert("Lütfen bir isim girin!"); 
+            
+            localStorage.setItem('steam_username', val); 
+            state.username = val; 
+            
+            // Login olunca skorları yükle
+            state.highScores = loadUserHighScores(state.username);
+            
+            initCategories(); 
+        }
+
+        function logout() { 
+            // Çıkış yapınca verileri temizle (İstek üzerine)
+            if(state.username) {
+                clearUserData(state.username);
+            }
+            localStorage.removeItem('steam_username'); 
+            state.username = "";
+            state.highScores = {};
+            showScreen('screen-home'); 
+        }
+        
         function confirmExit() { document.getElementById('exitModal').style.display = 'flex'; }
         function closeExitModal() { document.getElementById('exitModal').style.display = 'none'; }
         function doExit() { closeExitModal(); showScreen('screen-home'); }
@@ -347,7 +450,10 @@
                 const div = document.createElement('div');
                 div.className = "group relative cursor-pointer overflow-hidden rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary/30 hover:ring-2 hover:ring-primary h-32";
                 div.onclick = () => fetchGames(cat.name);
+                
+                // SKORU STATE'DEN AL
                 const rec = state.highScores[cat.name] || 0;
+                
                 div.innerHTML = `<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('${cat.img}');"></div><div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors"></div><div class="absolute inset-0 flex flex-col items-center justify-center p-2"><p class="text-white text-xl font-bold uppercase tracking-wider text-center z-10 drop-shadow-lg">${cat.name}</p><p class="text-primary text-sm font-bold mt-1 z-10 drop-shadow-md">Rekor: ${rec}</span></div>`;
                 grid.appendChild(div);
             });
@@ -454,13 +560,19 @@
         document.getElementById('guessInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkGuess(); });
 
         async function endGame() {
+            // Skoru sunucuya gönder (Liderlik tablosu için)
             await fetch(`${API_URL}/submit-score`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: state.username, category: state.currentCategoryName, score: state.score}) });
+            
+            // Skoru yerel hafızaya kaydet (Kişisel Rekor ve 5 gün kuralı için)
+            state.highScores = saveUserHighScore(state.username, state.currentCategoryName, state.score);
+
             const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
             const leaderboard = await res.json();
             showScreen('screen-result');
             
-            // DÜZENLENDİ: Puan metinleri güncellendi
+            // SKORLARI GÖSTER (GÜNCELLENMİŞ STATE KULLANILIYOR)
             document.getElementById('finalScoreDisplay').innerText = `Mevcut Skor : ${state.score}`;
+            // Burada artık local storage'dan gelen güncel rekor görünecek
             document.getElementById('sessionBestDisplay').innerText = `En İyi Skor : ${state.highScores[state.currentCategoryName] || state.score}`;
             document.getElementById('resultCategoryTitle').innerText = state.currentCategoryName;
             
