@@ -230,9 +230,9 @@
             </div>
 
             <div class="flex gap-2 w-full justify-center">
-                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel & Bilgi (-15)</button>
-                <button onclick="useHint('word')" id="btnHintWord" class="px-4 py-2 bg-[#4d3a2c] border border-orange-500/50 text-orange-300 hover:bg-orange-900 text-xs font-bold rounded transition">🔤 Harf (-10)</button>
-                <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-5)</button>
+                <button onclick="useHint('image')" id="btnHintImage" class="px-4 py-2 bg-[#3d2c4d] border border-purple-500/50 text-purple-300 hover:bg-purple-900 text-xs font-bold rounded transition">🖼️ Görsel & Bilgi (-20)</button>
+                <button onclick="useHint('word')" id="btnHintWord" class="px-4 py-2 bg-[#4d3a2c] border border-orange-500/50 text-orange-300 hover:bg-orange-900 text-xs font-bold rounded transition">🔤 Harf (-15)</button>
+                <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-1)</button>
             </div>
 
             <div class="w-full max-w-lg flex flex-col items-center gap-4 relative">
@@ -505,7 +505,9 @@
             document.getElementById('reviewText').innerText = `"${txt}"`;
             document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
             document.getElementById('playtimeText').innerHTML = `${rev.playtime} saat oynadı`;
-            const inp = document.getElementById('guessInput'); inp.value = ""; inp.focus(); document.getElementById('suggestion-list').style.display = 'none';
+            const inp = document.getElementById('guessInput'); inp.value = ""; 
+            // inp.focus(); // MOBİL KLAVYE SORUNU İÇİN KALDIRILDI
+            document.getElementById('suggestion-list').style.display = 'none';
 
             // İpucu Bilgilerini Doldur (Ama Gizli)
             const details = game.details || { developer: "Bilinmiyor", date: "?", likes: "0" };
@@ -518,7 +520,8 @@
         function useHint(type) {
             const game = state.games[state.currentGameIndex];
             if (type === 'image') {
-                state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
+                // PUAN DÜZENLEMESİ: -20
+                state.currentPot -= 20; if(state.currentPot < 0) state.currentPot = 0;
                 
                 // GÖRSEL İPUCUNU GÖSTER
                 document.getElementById('hintImageArea').classList.remove('hidden');
@@ -526,14 +529,25 @@
                 
                 const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             } else if (type === 'word') {
-                state.currentPot -= 10; if(state.currentPot < 0) state.currentPot = 0;
+                // PUAN DÜZENLEMESİ: -15
+                state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
                 let hiddenName = game.name.replace(/[a-zA-Z0-9]/g, (char, index) => { return index === 0 || game.name[index-1] === ' ' ? char : '*'; });
                 document.getElementById('wordHintText').innerText = hiddenName;
                 const btn = document.getElementById('btnHintWord'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             }
         }
 
-        function nextReview() { if(state.currentReviewIndex < 9) { state.currentReviewIndex++; state.currentPot -= 5; if(state.currentPot < 0) state.currentPot = 0; updateUI(); } else { document.getElementById('feedbackMsg').innerText = "Son ipucu!"; } }
+        function nextReview() { 
+            if(state.currentReviewIndex < 9) { 
+                state.currentReviewIndex++; 
+                // PUAN DÜZENLEMESİ: -1
+                state.currentPot -= 1; 
+                if(state.currentPot < 0) state.currentPot = 0; 
+                updateUI(); 
+            } else { 
+                document.getElementById('feedbackMsg').innerText = "Son ipucu!"; 
+            } 
+        }
 
         // --- AUTOCOMPLETE ---
         const input = document.getElementById('guessInput');
