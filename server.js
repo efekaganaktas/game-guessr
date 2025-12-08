@@ -1,6 +1,9 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const fs = require('fs'); // Dosya işlemleri için kütüphane
+const path = require('path');
+
 const app = express();
 
 app.use(cors());
@@ -9,6 +12,7 @@ app.use(express.json());
 // --- AYARLAR ---
 const PORT = process.env.PORT || 3000;
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000; // 5 Gün
+const SCORES_FILE = path.join(__dirname, 'scores.json'); // Skorların tutulacağı dosya
 
 // OYUN LİSTESİNİ YÜKLE
 let GAME_IDS = [];
@@ -19,8 +23,35 @@ try {
     GAME_IDS = [{ id: 730, name: "Counter-Strike 2", tags: ["Aksiyon"] }];
 }
 
-// --- GEÇİCİ HAFIZA ---
+// --- KALICI HAFIZA YÖNETİMİ ---
 let GLOBAL_SCORES = [];
+
+// 1. Sunucu açılırken eski skorları dosyadan yükle
+function loadScoresFromFile() {
+    if (fs.existsSync(SCORES_FILE)) {
+        try {
+            const data = fs.readFileSync(SCORES_FILE, 'utf8');
+            GLOBAL_SCORES = JSON.parse(data);
+            console.log("Eski skorlar başarıyla yüklendi.");
+        } catch (err) {
+            console.error("Skor dosyası okunurken hata oluştu:", err);
+            GLOBAL_SCORES = [];
+        }
+    }
+}
+
+// 2. Skorlar her değiştiğinde dosyaya kaydet
+function saveScoresToFile() {
+    try {
+        fs.writeFileSync(SCORES_FILE, JSON.stringify(GLOBAL_SCORES, null, 2));
+    } catch (err) {
+        console.error("Skor dosyası kaydedilemedi:", err);
+    }
+}
+
+// Başlangıçta yüklemeyi yap
+loadScoresFromFile();
+
 
 // --- YARDIMCI FONKSİYONLAR ---
 
@@ -53,11 +84,9 @@ function isSafeContent(text) {
     const forbidden = ["recep tayyip", "rte", "siyaset", "seçim", "cumhurbaşkanı", "kurdistan", "terör"];
     for (let f of forbidden) { if (t.includes(f)) return false; }
     
-    // Çok çok kısa (tek kelime küfür vb.) veya aşırı uzun (spam) ise ele
-    if (t.length > 600) return false; // Okuması zor olmasın diye limiti biraz artırdım ama çok da değil
-    if (t.length < 5) return false;   // "güzel" gibi tek kelimelikleri tutabiliriz ama 5 harf altı genelde çöp
+    if (t.length > 600) return false; 
+    if (t.length < 5) return false;   
     
-    // Sadece şekil/ascii art olan yorumları ele (basit kontrol)
     const letterCount = (t.match(/[a-zğüşıöç]/g) || []).length;
     if (letterCount < 3) return false;
 
@@ -72,7 +101,7 @@ app.get('/api/all-games', (req, res) => {
     res.json(names);
 });
 
-// 2. Oyun Sorusu Getir (GÜNCELLENEN KISIM)
+// 2. Oyun Sorusu Getir
 app.get('/api/game-quiz', async (req, res) => {
     const category = req.query.category;
     let pool = [];
@@ -83,7 +112,6 @@ app.get('/api/game-quiz', async (req, res) => {
         pool = GAME_IDS.filter(g => g.tags.includes(category));
     }
 
-    // Yeterli oyun yoksa havuzu diğerleriyle doldur
     if (pool.length < 10) {
         const others = GAME_IDS.filter(g => !pool.includes(g));
         pool = pool.concat(shuffleArray(others).slice(0, 15 - pool.length));
@@ -91,17 +119,15 @@ app.get('/api/game-quiz', async (req, res) => {
 
     const shuffledGames = shuffleArray([...pool]); 
     const resultData = [];
-    const MAX_GAMES = 10; // İstemciye gönderilecek toplam oyun sayısı
+    const MAX_GAMES = 10;
 
     try {
         for (let game of shuffledGames) {
             if (resultData.length >= MAX_GAMES) break;
 
             const imageUrl = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${game.id}/header.jpg`;
-            // DAHA FAZLA YORUM ÇEKİYORUZ (num_per_page=100)
             const reviewUrl = `https://store.steampowered.com/appreviews/${game.id}?json=1&language=turkish&filter=all&num_per_page=100&purchase_type=all`;
             
-            // Oyun Detaylarını Çek
             let gameDetails = { developer: "Bilinmiyor", date: "?", likes: "0" };
             try {
                 const detailsUrl = `https://store.steampowered.com/api/appdetails?appids=${game.id}&l=turkish`;
@@ -114,21 +140,15 @@ app.get('/api/game-quiz', async (req, res) => {
                         likes: data.recommendations ? data.recommendations.total.toLocaleString() : "0"
                     };
                 }
-            } catch (detailErr) { /* Detay çekilemezse varsayılan kalır */ }
+            } catch (detailErr) { }
 
             try {
                 const reviewResponse = await axios.get(reviewUrl);
                 let reviewsRaw = reviewResponse.data.reviews;
 
-                if (!reviewsRaw || reviewsRaw.length < 5) continue; // Çok az yorumu olan oyunu pas geç
+                if (!reviewsRaw || reviewsRaw.length < 5) continue;
 
-                // 1. ADIM: Güvenlik Filtresi (Siyaset/Spam temizliği)
                 let safeReviews = reviewsRaw.filter(r => isSafeContent(r.review));
-
-                // 2. ADIM: Kategorizasyon
-                // Bilgilendirici: Uzunluğu makul, genelde oyun hakkında bilgi verir.
-                // Eğlenceli/Kısa: Kısa ama yüksek puan almış olabilir.
-                
                 let informativeReviews = [];
                 let funnyReviews = [];
                 let fillerReviews = [];
@@ -138,14 +158,13 @@ app.get('/api/game-quiz', async (req, res) => {
                     const item = {
                         text: maskGameName(cleanText, game.name),
                         playtime: Math.floor(r.author.playtime_forever / 60),
-                        votes: r.votes_up // Yararlılık puanı
+                        votes: r.votes_up 
                     };
 
-                    // İngilizce filtresi (Basit)
                     const commonEnglish = [" the ", " is ", " and ", " game ", " best ", " good "];
                     let enCount = 0;
                     for(let w of commonEnglish) { if(item.text.toLowerCase().includes(w)) enCount++; }
-                    if (enCount >= 3) return; // İngilizce yorumu atla
+                    if (enCount >= 3) return;
 
                     if (item.text.length > 60) {
                         informativeReviews.push(item);
@@ -156,47 +175,24 @@ app.get('/api/game-quiz', async (req, res) => {
                     }
                 });
 
-                // Yararlılık puanına göre sırala (En beğenilenler üstte)
                 informativeReviews.sort((a, b) => b.votes - a.votes);
                 funnyReviews.sort((a, b) => b.votes - a.votes);
 
-                // 3. ADIM: 10 Adet Yorum Oluşturma (Karma Strateji)
                 let finalReviews = [];
-
-                // A) Önce 7-8 tane bilgilendirici (tahmin ettirici) al
                 finalReviews.push(...informativeReviews.slice(0, 8));
-
-                // B) Sonra 2-3 tane kısa/komik al (Renk katsın)
                 const neededForFun = 10 - finalReviews.length;
-                finalReviews.push(...funnyReviews.slice(0, Math.min(neededForFun, 3))); // En fazla 3 komik
+                finalReviews.push(...funnyReviews.slice(0, Math.min(neededForFun, 3)));
 
-                // C) Eğer hala 10 tane olmadıysa, ne bulursan ekle (Filler veya artan informative)
                 while (finalReviews.length < 10) {
-                    // Kullanılmamış informative var mı?
-                    if (informativeReviews.length > 8 + (finalReviews.length - neededForFun)) {
-                         // Basitçe: Kalan havuzdan ekle (Burada indeks takibi karmaşıklaşmasın diye basitleştiriyorum)
-                         // Rastgele kalanlardan al
-                         let nextCandidate = informativeReviews[finalReviews.length] || funnyReviews[finalReviews.length] || fillerReviews[0];
-                         if (nextCandidate && !finalReviews.includes(nextCandidate)) {
-                             finalReviews.push(nextCandidate);
-                         } else {
-                             // Havuz tamamen kuruduysa döngüyü kır (ama 100 yorum çektiğimiz için zor)
-                             break;
-                         }
+                    let nextCandidate = informativeReviews[finalReviews.length] || funnyReviews[finalReviews.length] || fillerReviews[0];
+                    if (nextCandidate && !finalReviews.includes(nextCandidate)) {
+                        finalReviews.push(nextCandidate);
                     } else {
-                        // Hiçbir şey kalmadıysa, listeyi doldurmak için başa dönüp tekrar ekle (Son çare)
-                        if (finalReviews.length > 0) {
-                            finalReviews.push(finalReviews[0]); 
-                        } else {
-                            break; 
-                        }
+                        break;
                     }
                 }
 
-                // Yorumları karıştır (Komikler hep sonda olmasın)
                 finalReviews = shuffleArray(finalReviews);
-
-                // Eğer hala 3 yorumdan az ise bu oyunu tamamen pas geç
                 if (finalReviews.length < 3) continue;
 
                 resultData.push({
@@ -205,7 +201,7 @@ app.get('/api/game-quiz', async (req, res) => {
                     category: game.tags.join(', '),
                     image: imageUrl,
                     details: gameDetails,
-                    reviews: finalReviews.slice(0, 10) // Ne olursa olsun maksimum 10 gönder
+                    reviews: finalReviews.slice(0, 10) 
                 });
 
             } catch (innerErr) { continue; }
@@ -217,7 +213,7 @@ app.get('/api/game-quiz', async (req, res) => {
     }
 });
 
-// 3. Skor Kaydet
+// 3. Skor Kaydet (GÜNCELLENDİ: Dosyaya Kayıt Ekledik)
 app.post('/api/submit-score', (req, res) => {
     const { username, category, score } = req.body;
     if (!username) return res.status(400).json({ error: "Eksik bilgi" });
@@ -233,6 +229,10 @@ app.post('/api/submit-score', (req, res) => {
     } else {
         GLOBAL_SCORES.push({ username, category, score, timestamp: now });
     }
+    
+    // --- ÖNEMLİ DEĞİŞİKLİK: HER KAYITTAN SONRA DOSYAYA YAZ ---
+    saveScoresToFile();
+    
     res.json({ success: true });
 });
 
@@ -240,6 +240,8 @@ app.post('/api/submit-score', (req, res) => {
 app.get('/api/leaderboard', (req, res) => {
     const category = req.query.category;
     const now = Date.now();
+    
+    // Süresi dolmuş skorları temizle (isteğe bağlı olarak bunu saveScoresToFile öncesi de yapabilirsin)
     GLOBAL_SCORES = GLOBAL_SCORES.filter(s => (now - s.timestamp) < FIVE_DAYS_MS);
 
     let currentScores = [...GLOBAL_SCORES];
@@ -249,11 +251,13 @@ app.get('/api/leaderboard', (req, res) => {
     res.json(currentScores.slice(0, 10));
 });
 
-// 5. Çıkış Yap
+// 5. Çıkış Yap (GÜNCELLENDİ: Dosyayı Güncelle)
 app.post('/api/logout', (req, res) => {
     const { username } = req.body;
     if (username) {
         GLOBAL_SCORES = GLOBAL_SCORES.filter(s => s.username !== username);
+        // Listeden silince dosyayı da güncelle
+        saveScoresToFile();
     }
     res.json({ success: true });
 });
