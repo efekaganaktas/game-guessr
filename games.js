@@ -2,7 +2,6 @@
 // Yeni oyun eklemek istersen buraya ekleyip kaydetmen yeterli.
 
 const GAME_IDS = [
-    // --- VALVE & KLASİKLER ---
     { id: 730, name: "Counter-Strike 2", tags: ["Aksiyon", "Çok Oyunculu", "FPS", "Rekabetçi"] },
     { id: 570, name: "Dota 2", tags: ["Strateji", "Çok Oyunculu", "MOBA"] },
     { id: 440, name: "Team Fortress 2", tags: ["Aksiyon", "Çok Oyunculu", "Komik", "FPS"] },
@@ -11,8 +10,6 @@ const GAME_IDS = [
     { id: 550, name: "Left 4 Dead 2", tags: ["Aksiyon", "Korku", "Eşli", "Zombi"] },
     { id: 400, name: "Portal", tags: ["Bulmaca", "Bilim Kurgu", "Tek Oyunculu"] },
     { id: 10, name: "Counter-Strike", tags: ["Aksiyon", "FPS", "Klasik"] },
-
-    // --- TURNUVA LİSTESİNDEN EKLENENLER ---
     { id: 12140, name: "Max Payne", tags: ["Aksiyon", "Klasik", "Hikaye Zengin"] },
     { id: 1659420, name: "UNCHARTED™: Legacy of Thieves Collection", tags: ["Macera", "Aksiyon", "Hikaye Zengin"] },
     { id: 813780, name: "Age of Empires II: Definitive Edition", tags: ["Strateji", "Tarihsel"] },
@@ -44,8 +41,6 @@ const GAME_IDS = [
     { id: 1328670, name: "Mass Effect™ Legendary Edition", tags: ["RPG", "Bilim Kurgu", "Hikaye Zengin"] },
     { id: 1817070, name: "Marvel’s Spider-Man Remastered", tags: ["Aksiyon", "Açık Dünya", "Süper Kahraman"] },
     { id: 284050, name: "Sanitarium", tags: ["Korku", "Macera", "Klasik"] },
-
-    // --- AÇIK DÜNYA & AKSİYON ---
     { id: 271590, name: "GTA V", tags: ["Aksiyon", "Macera", "Araç Kullanma", "Açık Dünya"] },
     { id: 1174180, name: "Red Dead Redemption 2", tags: ["Macera", "Aksiyon", "Hikaye Zengin", "Atmosferik"] },
     { id: 1091500, name: "Cyberpunk 2077", tags: ["RPG", "Bilim Kurgu", "Aksiyon", "Açık Dünya"] },
@@ -72,8 +67,6 @@ const GAME_IDS = [
     { id: 870780, name: "Control", tags: ["Aksiyon", "Doğaüstü", "Hikaye Zengin"] },
     { id: 1332010, name: "Stray", tags: ["Macera", "Kedi", "Cyberpunk"] },
     { id: 990080, name: "Hogwarts Legacy", tags: ["RPG", "Açık Dünya", "Büyü", "Fantastik"] },
-
-    // --- FPS & REKABETÇİ ---
     { id: 1172470, name: "Apex Legends", tags: ["Aksiyon", "Çok Oyunculu", "Battle Royale"] },
     { id: 578080, name: "PUBG: BATTLEGROUNDS", tags: ["Aksiyon", "Hayatta Kalma - Korku", "Battle Royale"] },
     { id: 1938090, name: "Call of Duty®", tags: ["Aksiyon", "FPS", "Çok Oyunculu"] },
@@ -94,8 +87,6 @@ const GAME_IDS = [
     { id: 1144200, name: "Ready or Not", tags: ["FPS", "Taktiksel", "Eşli", "Polis"] },
     { id: 42700, name: "Call of Duty: Black Ops", tags: ["Aksiyon", "FPS"] },
     { id: 2000950, name: "Call of Duty: Modern Warfare", tags: ["Aksiyon", "FPS"] },
-
-    // --- KORKU & HAYATTA KALMA ---
     { id: 739630, name: "Phasmophobia", tags: ["Korku", "Eşli", "VR"] },
     { id: 381210, name: "Dead by Daylight", tags: ["Korku", "Çok Oyunculu", "Hayatta Kalma - Korku"] },
     { id: 242760, name: "The Forest", tags: ["Korku", "Hayatta Kalma - Korku", "Macera"] },
@@ -126,8 +117,6 @@ const GAME_IDS = [
     { id: 952060, name: "Resident Evil 3", tags: ["Korku", "Aksiyon", "Remake"] },
     { id: 418370, name: "Resident Evil 7 Biohazard", tags: ["Korku", "Birinci Şahıs", "VR"] },
     { id: 1196590, name: "Resident Evil Village", tags: ["Korku", "Birinci Şahıs", "Aksiyon"] },
-
-    // --- SİMÜLASYON & STRATEJİ ---
     { id: 227300, name: "Euro Truck Simulator 2", tags: ["Simülasyon", "Araç Kullanma", "Rahatlatıcı"] },
     { id: 270880, name: "American Truck Simulator", tags: ["Simülasyon", "Araç Kullanma"] },
     { id: 1222670, name: "The Sims 4", tags: ["Simülasyon", "Yaşam"] },
@@ -157,8 +146,6 @@ const GAME_IDS = [
     { id: 466560, name: "Northgard", tags: ["Strateji", "Viking", "Şehir Kurma"] },
     { id: 613100, name: "House Flipper", tags: ["Simülasyon", "İnşa Etme", "Rahatlatıcı"] },
     { id: 1290000, name: "PowerWash Simulator", tags: ["Simülasyon", "Rahatlatıcı"] },
-
-    // --- BAĞIMSIZ & ROGUELIKE ---
     { id: 105600, name: "Terraria", tags: ["Macera", "2D", "Bağımsız Yapım"] },
     { id: 1145360, name: "Hades", tags: ["Aksiyon Roguelike", "Bağımsız Yapım", "Aksiyon"] },
     { id: 646570, name: "Slay the Spire", tags: ["Strateji", "Kart Oyunu", "Bağımsız Yapım"] },
@@ -176,8 +163,6 @@ const GAME_IDS = [
     { id: 1092790, name: "Inscryption", tags: ["Strateji", "Kart Oyunu", "Korku"] },
     { id: 247080, name: "Crypt of the NecroDancer", tags: ["Ritim", "Roguelike"] },
     { id: 962130, name: "Grounded", tags: ["Hayatta Kalma - Korku", "Macera"] },
-
-    // --- YARIŞ & DÖVÜŞ & DİĞER ---
     { id: 1293830, name: "Forza Horizon 4", tags: ["Yarış", "Araç Kullanma", "Açık Dünya"] },
     { id: 1551360, name: "Forza Horizon 5", tags: ["Yarış", "Araç Kullanma", "Açık Dünya"] },
     { id: 1080110, name: "F1® 22", tags: ["Yarış", "Simülasyon"] },
@@ -197,6 +182,15 @@ const GAME_IDS = [
     { id: 1978800, name: "Mortal Kombat 1", tags: ["Dövüş", "Vahşet", "Aksiyon"] },
     { id: 570940, name: "DARK SOULS™: REMASTERED", tags: ["RPG", "Zor", "Karanlık Fantazi"] },
     { id: 335300, name: "DARK SOULS™ II: Scholar of the First Sin", tags: ["RPG", "Zor"] },
+    { id: 1172620, name: "Sea of Thieves", tags: ["Macera", "Aksiyon", "Korsan", "Eşli"] },
+    { id: 2378620, name: "Anomaly Agent", tags: ["Aksiyon", "Platform", "Cyberpunk", "Türk Yapımı"] },
+    { id: 261550, name: "Mount & Blade II: Bannerlord", tags: ["Strateji", "RPG", "Ortaçağ", "Savaş", "Türk Yapımı"] },
+    { id: 48700, name: "Mount & Blade: Warband", tags: ["RPG", "Strateji", "Ortaçağ", "Klasik", "Türk Yapımı"] },
+    { id: 3527290, name: "PEAK", tags: ["Macera", "Platform", "Zor", "Tırmanma"] },
+    { id: 3949040, name: "RV There Yet?", tags: ["Macera", "Eşli", "Simülasyon", "Araç Kullanma"] },
+    { id: 1808500, name: "ARC Raiders", tags: ["Aksiyon", "Nişancı", "Bilim Kurgu", "Eşli"] },
+    { id: 2440510, name: "Forza Motorsport", tags: ["Yarış", "Simülasyon", "Spor"] },
+    { id: 284160, name: "BeamNG.drive", tags: ["Simülasyon", "Araç Kullanma", "Fizik Tabanlı", "Sandbox"] },
 ];
 
 module.exports = GAME_IDS;
