@@ -121,10 +121,10 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* AUTOCOMPLETE DÜZENLENDİ: ARTIK INPUTUN ALTINDA */
+        /* AUTOCOMPLETE DÜZENLENDİ */
         #suggestion-list {
             position: absolute;
-            top: 100%; /* Inputun tam bittiği yerden başla */
+            top: 100%; 
             left: 0;
             background: #171a21;
             border: 1px solid #66c0f4;
@@ -135,7 +135,7 @@
             border-radius: 0 0 8px 8px;
             display: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-            margin-top: 4px; /* Hafif boşluk */
+            margin-top: 4px;
         }
         #suggestion-list div {
             padding: 10px; cursor: pointer; color: #c7d5e0; border-bottom: 1px solid #2a475e;
@@ -145,10 +145,18 @@
         }
         
         .blur-hint { 
-            filter: blur(5px); /* Bulanıklık seviyesi sabitlendi */
-            pointer-events: none; /* Tıklama ve fare olayları devre dışı bırakıldı */
-            user-select: none; /* Metin seçimi engellendi */
-            -webkit-touch-callout: none; /* iOS'ta uzun basma menüsü engellendi */
+            filter: blur(5px);
+            pointer-events: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+         }
+
+         /* Input border animasyonları */
+         .shake { animation: shake 0.5s; }
+         @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
          }
     </style>
 </head>
@@ -162,7 +170,6 @@
             <div class="flex flex-col items-center gap-2"> <svg class="w-20 h-20 text-primary drop-shadow-[0_0_15px_rgba(102,192,244,0.5)]" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
                 </svg>
-                <!-- H1 etiketi SEO için kritik, marka adını içeriyor -->
                 <h1 class="text-6xl font-black tracking-tight drop-shadow-lg logo-text">GameGuessr</h1>
             </div>
 
@@ -233,12 +240,9 @@
                 <div class="size-8 text-primary group-hover:rotate-12 transition-transform">
                     <svg fill="currentColor" viewBox="0 0 24 24"><path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4-3c-.83 0-1.5-.67-1.5-1.5S19.17 9 20 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 </div>
-                <!-- Logoyu Mobilde Gizleyelim ki Kategori Adı Sığsın -->
                 <h2 class="font-bold hidden md:block logo-text">GameGuessr</h2>
             </div>
             
-            <!-- Kategori buradan kaldırıldı ve aşağıya (Main içine) taşındı -->
-
             <div class="flex gap-4 sm:gap-9">
                 <span id="scoreDisplay" class="text-primary font-medium">Puan: 0</span>
                 <span id="gameProgress" class="text-white font-medium">1/10</span>
@@ -247,18 +251,15 @@
 
         <main class="flex flex-col items-center gap-6 p-4 mt-4 w-full max-w-4xl mx-auto flex-1">
             
-            <!-- KATEGORİ ADI (YENİ KONUM: İÇERİK ALANININ EN ÜSTÜ) -->
             <div class="w-full flex justify-center -mt-2">
                  <span id="gameCategoryCenter" class="text-primary font-black text-lg sm:text-2xl uppercase tracking-widest drop-shadow-[0_0_10px_rgba(102,192,244,0.3)]">KATEGORİ</span>
             </div>
 
             <!-- GÖRSEL İPUCU ALANI -->
             <div id="hintImageArea" class="hidden w-full bg-[#171a21]/90 border border-[#2a475e] rounded-xl overflow-hidden p-4 flex gap-4 transition-all duration-300">
-                <!-- Sol: Görsel -->
                 <div class="w-1/3 min-w-[120px] max-w-[200px] aspect-video relative rounded overflow-hidden border border-white/10 bg-black">
                      <img id="hintImage" src="" class="w-full h-full object-cover blur-hint opacity-80" alt="Oyun ipucu görseli">
                 </div>
-                <!-- Sağ: Bilgiler -->
                 <div class="flex-1 flex flex-col justify-center gap-2 text-sm">
                     <h3 class="text-primary font-bold text-lg mb-1">Oyun Bilgileri</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
@@ -288,24 +289,34 @@
                 <button onclick="nextReview()" class="px-4 py-2 bg-secondary-accent hover:bg-[#576b7e] text-white text-xs font-bold rounded transition">🔄 Yeni Yorum (-1)</button>
             </div>
 
-            <div class="w-full max-w-lg flex flex-col items-center gap-4 relative">
-                <!-- Autocomplete için Relative Parent Gerekli -->
-                <div class="w-full relative">
-                    <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 text-base focus:ring-2 focus:ring-primary" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
-                    <!-- Liste Inputun İçinde Değil, Kardeşi Olarak Bu Relative Div İçinde -->
+            <div class="w-full max-w-lg flex flex-col items-center gap-2 relative">
+                
+                <!-- 1. İPUCU YAZISI (INPUTUN ÜSTÜNE ALINDI) -->
+                <p id="wordHintText" class="text-center text-primary font-mono tracking-widest text-sm h-5 font-bold mb-1"></p>
+
+                <!-- 2. INPUT VE ÇARPI BUTONU -->
+                <div class="w-full relative group">
+                    <!-- pr-12 eklendi ki yazı çarpı butonunun altına girmesin -->
+                    <input id="guessInput" class="w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 pr-12 text-base focus:ring-2 focus:ring-primary transition-all duration-200" placeholder="Oyun ismini tahmin et..." autocomplete="off"/>
+                    
+                    <!-- ÇARPI BUTONU (X) -->
+                    <button id="clearInputBtn" onclick="clearInput()" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white hidden p-1" title="Temizle">
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
+
                     <div id="suggestion-list"></div>
                 </div>
                 
-                <p id="wordHintText" class="text-center text-primary font-mono mt-0 tracking-widest text-sm h-5 font-bold"></p>
-
-                <div class="flex w-full gap-3">
-                    <button onclick="checkGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors">Tahmin Et</button>
-                    <button onclick="passGame()" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors">Pas Geç</button>
+                <!-- 3. BUTONLARIN YERİ DEĞİŞTİRİLDİ (SOL: PAS GEÇ, SAĞ: TAHMİN ET) -->
+                <div class="flex w-full gap-3 mt-2">
+                    <button onclick="passGame()" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors shadow-lg">Pas Geç</button>
+                    <button onclick="checkGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors shadow-lg">Tahmin Et</button>
                 </div>
             </div>
 
             <div class="min-h-6 pt-2">
-                <p id="feedbackMsg" class="text-lg font-bold text-center"></p>
+                <!-- Geri bildirim mesajı artık sadece gerektiğinde kullanılacak, ana geri bildirim border olacak -->
+                <p id="feedbackMsg" class="hidden text-lg font-bold text-center"></p>
             </div>
         </main>
     </div>
@@ -471,7 +482,6 @@
         }
 
         async function logout() { 
-            // Çıkış yapınca sunucuya haber ver ve verileri sil
             if(state.username) {
                 try {
                     await fetch(`${API_URL}/logout`, {
@@ -482,7 +492,6 @@
                 } catch (e) {
                     console.log("Sunucudan çıkış yapılamadı, ancak yerel veri siliniyor.");
                 }
-
                 clearUserData(state.username);
             }
             localStorage.removeItem('steam_username'); 
@@ -491,7 +500,6 @@
             showScreen('screen-home'); 
         }
         
-        // MODAL FONKSİYONLARI (GÜNCELLENDİ)
         function openModal(type) {
             const modal = document.getElementById('exitModal');
             const title = document.getElementById('modalTitle');
@@ -501,12 +509,12 @@
             if (type === 'logout') {
                 title.innerText = "Çıkmak istiyor musun?";
                 text.innerText = "Mevcut ilerlemen kaybolacak.";
-                text.style.display = 'block'; // Metni göster
+                text.style.display = 'block'; 
                 btn.onclick = async () => { await logout(); closeModal(); };
             } else if (type === 'home') {
                 title.innerText = "Ana ekrana git?";
-                text.innerText = ""; // Kullanıcı sadece başlık istediği için metni boşaltıyoruz
-                text.style.display = 'none'; // Metni gizle
+                text.innerText = ""; 
+                text.style.display = 'none'; 
                 btn.onclick = () => { doExit(); closeModal(); };
             }
 
@@ -515,7 +523,6 @@
 
         function closeModal() { document.getElementById('exitModal').style.display = 'none'; }
         
-        // Ana Ekrana Gitme Fonksiyonu
         function doExit() { showScreen('screen-home'); }
 
         function initCategories() {
@@ -549,6 +556,7 @@
         }
 
         function startGame() { showScreen('screen-game'); loadLevel(); }
+        
         function loadLevel() { 
             if(state.currentGameIndex >= state.games.length) { endGame(); return; } 
             state.currentReviewIndex = 0; state.currentPot = 100; 
@@ -561,6 +569,13 @@
             document.getElementById('btnHintImage').classList.remove('opacity-50', 'cursor-not-allowed'); 
             document.getElementById('btnHintWord').classList.remove('opacity-50', 'cursor-not-allowed'); 
             document.getElementById('feedbackMsg').innerText = ""; 
+            
+            // Inputu sıfırla ve border renklerini temizle
+            const inp = document.getElementById('guessInput');
+            inp.value = "";
+            inp.className = "w-full rounded-lg bg-black/40 border-none text-white h-14 placeholder:text-slate-400 p-4 pr-12 text-base focus:ring-2 focus:ring-primary transition-all duration-200";
+            
+            document.getElementById('clearInputBtn').classList.add('hidden');
             
             updateUI(); 
         }
@@ -577,8 +592,6 @@
             document.getElementById('reviewCountBadge').innerText = `Yorum ${state.currentReviewIndex + 1}/10`;
             document.getElementById('playtimeText').innerHTML = `${rev.playtime} saat oynadı`;
             
-            const inp = document.getElementById('guessInput'); inp.value = ""; 
-            // inp.focus(); // MOBİL KLAVYE SORUNU İÇİN KALDIRILDI
             document.getElementById('suggestion-list').style.display = 'none';
 
             const details = game.details || { developer: "Bilinmiyor", date: "?", likes: "0" };
@@ -591,15 +604,11 @@
         function useHint(type) {
             const game = state.games[state.currentGameIndex];
             if (type === 'image') {
-                // PUAN DÜZENLEMESİ: -20
                 state.currentPot -= 20; if(state.currentPot < 0) state.currentPot = 0;
-                
                 document.getElementById('hintImageArea').classList.remove('hidden');
                 document.getElementById('hintImageArea').classList.add('flex');
-                
                 const btn = document.getElementById('btnHintImage'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed');
             } else if (type === 'word') {
-                // PUAN DÜZENLEMESİ: -15
                 state.currentPot -= 15; if(state.currentPot < 0) state.currentPot = 0;
                 let hiddenName = game.name.replace(/[a-zA-Z0-9]/g, (char, index) => { return index === 0 || game.name[index-1] === ' ' ? char : '*'; });
                 document.getElementById('wordHintText').innerText = hiddenName;
@@ -610,7 +619,6 @@
         function nextReview() { 
             if(state.currentReviewIndex < 9) { 
                 state.currentReviewIndex++; 
-                // PUAN DÜZENLEMESİ: -1
                 state.currentPot -= 1; 
                 if(state.currentPot < 0) state.currentPot = 0; 
                 updateUI(); 
@@ -619,25 +627,85 @@
             } 
         }
 
-        // --- AUTOCOMPLETE ---
+        // --- INPUT & AUTOCOMPLETE & CLEAR BUTTON ---
         const input = document.getElementById('guessInput');
         const list = document.getElementById('suggestion-list');
+        const clearBtn = document.getElementById('clearInputBtn');
+
+        // Temizleme fonksiyonu
+        function clearInput() {
+            input.value = '';
+            input.focus();
+            list.style.display = 'none';
+            toggleClearBtn();
+            // Hata veya başarı durumlarını (kırmızı/yeşil) temizle
+            resetInputValidation();
+        }
+
+        function toggleClearBtn() {
+            if(input.value.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+        
+        function resetInputValidation() {
+            // Tailwind sınıflarını temizle: ring-steam-error, ring-steam-success vb.
+            input.classList.remove('ring-4', 'ring-steam-error', 'ring-steam-success', '!ring-opacity-100');
+            // Orijinal focus ring'i geri getir (eğer silindiyse)
+            input.classList.add('focus:ring-2', 'focus:ring-primary');
+        }
+
         input.addEventListener('input', function() {
-            const val = this.value.toLowerCase(); list.innerHTML = ''; if (!val) { list.style.display = 'none'; return; }
+            toggleClearBtn();
+            resetInputValidation(); // Yazmaya başlayınca kırmızılık gitsin
+
+            const val = this.value.toLowerCase(); 
+            list.innerHTML = ''; 
+            if (!val) { list.style.display = 'none'; return; }
+            
             const matches = allGameNames.filter(n => n.toLowerCase().startsWith(val)).slice(0, 5);
-            if (matches.length > 0) { list.style.display = 'block'; matches.forEach(match => { const div = document.createElement('div'); div.innerText = match; div.onclick = function() { input.value = match; list.style.display = 'none'; checkGuess(); }; list.appendChild(div); }); } else { list.style.display = 'none'; }
+            if (matches.length > 0) { 
+                list.style.display = 'block'; 
+                matches.forEach(match => { 
+                    const div = document.createElement('div'); 
+                    div.innerText = match; 
+                    div.onclick = function() { 
+                        input.value = match; 
+                        list.style.display = 'none'; 
+                        toggleClearBtn();
+                        checkGuess(); 
+                    }; 
+                    list.appendChild(div); 
+                }); 
+            } else { 
+                list.style.display = 'none'; 
+            }
         });
-        document.addEventListener('click', function(e) { if (e.target !== input && e.target !== list) { list.style.display = 'none'; } });
+
+        document.addEventListener('click', function(e) { if (e.target !== input && e.target !== list && e.target !== clearBtn) { list.style.display = 'none'; } });
 
         function checkGuess() {
             const userGuess = input.value.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
             const correctName = state.games[state.currentGameIndex].name.toLowerCase().replace(/[^a-z0-9]/g, "");
-            const msg = document.getElementById('feedbackMsg');
+            
             if (userGuess === correctName) {
+                // DOĞRU: Yeşil Border
                 state.score += state.currentPot; state.history.push({...state.games[state.currentGameIndex], isCorrect: true});
-                msg.innerText = "DOĞRU!"; msg.className = "h-6 text-lg font-bold text-center text-steam-success";
+                
+                input.classList.remove('focus:ring-2', 'focus:ring-primary'); // Varsayılanı kaldır
+                input.classList.add('ring-4', 'ring-steam-success', '!ring-opacity-100');
+                
                 setTimeout(() => { state.currentGameIndex++; loadLevel(); }, 1000);
-            } else { msg.innerText = "Yanlış!"; msg.className = "h-6 text-lg font-bold text-center text-steam-error"; }
+            } else { 
+                // YANLIŞ: Kırmızı Border + Shake Animasyonu
+                input.classList.remove('focus:ring-2', 'focus:ring-primary');
+                input.classList.add('ring-4', 'ring-steam-error', '!ring-opacity-100', 'shake');
+                
+                // Shake animasyonunu tekrar tetiklemek için temizle
+                setTimeout(() => input.classList.remove('shake'), 500);
+            }
         }
 
         function passGame() { state.history.push({...state.games[state.currentGameIndex], isCorrect: false}); state.currentGameIndex++; loadLevel(); }
