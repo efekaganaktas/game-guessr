@@ -265,6 +265,7 @@ app.post('/api/logout', (req, res) => {
 // DOSYA SUNUMU
 app.get('/', (req, res) => { res.sendFile(__dirname + '/index.html'); });
 app.get('/logo.png', (req, res) => { res.sendFile(__dirname + '/logo.png'); });
+app.get('/prewiew.jpeg', (req, res) => { res.sendFile(__dirname + '/prewiew.jpeg'); }); // Önizleme görseli için rota
 app.get('/privacy', (req, res) => { res.sendFile(__dirname + '/privacy.html'); });
 app.get('/ads.txt', (req, res) => { res.sendFile(__dirname + '/ads.txt'); });
 app.get('/sitemap.xml', (req, res) => { res.sendFile(__dirname + '/sitemap.xml'); });
