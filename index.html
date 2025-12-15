@@ -410,6 +410,33 @@
             history: [], filterProfanity: false, isTransitioning: false
         };
 
+        // --- TARAYICI GEÇMİŞİ YÖNETİMİ (HISTORY API) ---
+        
+        // Kullanıcı geri tuşuna bastığında tetiklenir
+        window.addEventListener('popstate', function(event) {
+            if (event.state && event.state.screen) {
+                // Kaydedilen ekranı aç, ancak tekrar history'e ekleme yapma ('none')
+                showScreen(event.state.screen, 'none');
+            } else {
+                // Eğer state yoksa ana ekrana dön
+                showScreen('screen-home', 'none');
+            }
+        });
+
+        // showScreen güncellendi: historyMode parametresi eklendi
+        // historyMode: 'push' (yeni kayıt), 'replace' (mevcutu değiştir), 'none' (kayıt yok)
+        function showScreen(id, historyMode = 'push') {
+            document.querySelectorAll('.screen-section').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(id);
+            if(target) target.classList.add('active');
+
+            if (historyMode === 'push') {
+                history.pushState({ screen: id }, "", "");
+            } else if (historyMode === 'replace') {
+                history.replaceState({ screen: id }, "", "");
+            }
+        }
+
         // --- SKOR YÖNETİMİ ---
         function getUserDataKey(username) {
             return `gameguessr_data_${username}`;
@@ -463,18 +490,21 @@
         }
 
         window.onload = async function() {
-            showScreen('screen-home');
+            // İlk açılışta mevcut durumu replace et
+            history.replaceState({ screen: 'screen-home' }, "", "");
+            showScreen('screen-home', 'none');
+            
             try { const res = await fetch(`${API_URL}/all-games`); if(res.ok) allGameNames = await res.json(); } catch(e) { console.log("Liste çekilemedi"); }
             
             const storedUser = localStorage.getItem('steam_username');
             if (storedUser) {
                 state.username = storedUser;
                 state.highScores = loadUserHighScores(state.username);
-                initCategories();
+                // Doğrudan kategoriye gidiyorsak bunu history'e ekleyelim
+                initCategories('push');
             }
         };
 
-        function showScreen(id) { document.querySelectorAll('.screen-section').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         
         function startFlow() { 
             state.filterProfanity = document.getElementById('profanityCheck').checked; 
@@ -482,9 +512,9 @@
             if(stored) { 
                 state.username = stored; 
                 state.highScores = loadUserHighScores(state.username);
-                initCategories(); 
+                initCategories('push'); 
             } else { 
-                showScreen('screen-login'); 
+                showScreen('screen-login', 'push'); 
             } 
         }
 
@@ -495,7 +525,9 @@
             localStorage.setItem('steam_username', val); 
             state.username = val; 
             state.highScores = loadUserHighScores(state.username);
-            initCategories(); 
+            
+            // Login sonrası kategori ekranına geçiş 'replace' ile yapılır ki geri basınca login'e dönmesin
+            initCategories('replace'); 
         }
 
         async function logout() { 
@@ -514,7 +546,7 @@
             localStorage.removeItem('steam_username'); 
             state.username = "";
             state.highScores = {};
-            showScreen('screen-home'); 
+            showScreen('screen-home', 'replace'); // Çıkış yapınca geçmişi temizlemiş gibi davran
         }
         
         function openModal(type) {
@@ -540,9 +572,10 @@
 
         function closeModal() { document.getElementById('exitModal').style.display = 'none'; }
         
-        function doExit() { showScreen('screen-home'); }
+        function doExit() { showScreen('screen-home', 'push'); }
 
-        function initCategories() {
+        // initCategories parametre aldı
+        function initCategories(historyMode = 'push') {
             document.getElementById('welcomeText').innerText = `Hoşgeldin, ${state.username}`;
             const grid = document.getElementById('categoryGrid');
             grid.innerHTML = "";
@@ -556,7 +589,7 @@
                 div.innerHTML = `<div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style="background-image: url('${cat.img}');"></div><div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors"></div><div class="absolute inset-0 flex flex-col items-center justify-center p-2"><p class="text-white text-xl font-bold uppercase tracking-wider text-center z-10 drop-shadow-lg">${cat.name}</p><p class="text-primary text-sm font-bold mt-1 z-10 drop-shadow-md">Rekor: ${rec}</span></div>`;
                 grid.appendChild(div);
             });
-            showScreen('screen-category');
+            showScreen('screen-category', historyMode);
         }
 
         function cleanText(text) {
@@ -568,11 +601,18 @@
         }
 
         async function fetchGames(category) {
-            state.currentCategoryName = category; showScreen('screen-loading');
-            try { const res = await fetch(`${API_URL}/game-quiz?category=${encodeURIComponent(category)}`); const data = await res.json(); if(!data || data.length === 0) { alert("Oyun bulunamadı."); showScreen('screen-category'); return; } state.games = data; state.currentGameIndex = 0; state.score = 0; state.history = []; startGame(); } catch(e) { console.error(e); alert("Sunucuya bağlanılamadı."); showScreen('screen-category'); }
+            state.currentCategoryName = category; 
+            // Loading ekranı history'e eklenmesin ('none')
+            showScreen('screen-loading', 'none');
+            
+            try { const res = await fetch(`${API_URL}/game-quiz?category=${encodeURIComponent(category)}`); const data = await res.json(); if(!data || data.length === 0) { alert("Oyun bulunamadı."); showScreen('screen-category', 'replace'); return; } state.games = data; state.currentGameIndex = 0; state.score = 0; state.history = []; startGame(); } catch(e) { console.error(e); alert("Sunucuya bağlanılamadı."); showScreen('screen-category', 'replace'); }
         }
 
-        function startGame() { showScreen('screen-game'); loadLevel(); }
+        function startGame() { 
+            // Oyun ekranı history'e eklensin
+            showScreen('screen-game', 'push'); 
+            loadLevel(); 
+        }
         
         function loadLevel() { 
             if(state.currentGameIndex >= state.games.length) { endGame(); return; } 
@@ -780,7 +820,11 @@
 
             const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
             const leaderboard = await res.json();
-            showScreen('screen-result');
+            
+            // Oyun bitince 'replace' ile sonuç ekranını açıyoruz. 
+            // Böylece sonuç ekranındayken geri basınca bitmiş oyuna dönmez, kategori ekranına döner.
+            // (Çünkü oyun ekranı history'de bir önceki adımda kalır, result onu ezer)
+            showScreen('screen-result', 'replace');
             
             document.getElementById('finalScoreDisplay').innerText = `Mevcut Skor : ${state.score}`;
             document.getElementById('sessionBestDisplay').innerText = `En İyi Skor : ${state.highScores[state.currentCategoryName] || state.score}`;
