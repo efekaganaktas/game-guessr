@@ -158,6 +158,20 @@
             25% { transform: translateX(-5px); }
             75% { transform: translateX(5px); }
          }
+
+         /* PAS GEÇ TRANSITION OVERLAY */
+         #transition-overlay {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background-color: #c53333; /* steam-destructive-accent */
+            border-radius: 50%;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Tıklamayı engelleme, ama js ile kontrol edeceğiz */
+            transition: width 0.5s ease-in-out, height 0.5s ease-in-out, opacity 0.3s;
+            opacity: 0;
+        }
     </style>
 </head>
 <body class="bg-background-dark text-steam-text-light font-display h-screen overflow-x-hidden">
@@ -309,7 +323,7 @@
                 
                 <!-- 3. BUTONLARIN YERİ DEĞİŞTİRİLDİ (SOL: PAS GEÇ, SAĞ: TAHMİN ET) -->
                 <div class="flex w-full gap-3 mt-2">
-                    <button onclick="passGame()" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors shadow-lg">Pas Geç</button>
+                    <button onclick="passGame(this)" class="h-12 px-5 bg-destructive-accent hover:bg-[#d64545] text-white font-bold rounded-lg grow transition-colors shadow-lg">Pas Geç</button>
                     <button onclick="checkGuess()" class="h-12 px-5 bg-primary hover:bg-white hover:text-black text-slate-900 font-bold rounded-lg grow transition-colors shadow-lg">Tahmin Et</button>
                 </div>
             </div>
@@ -364,6 +378,9 @@
         </div>
     </div>
 
+    <!-- TRANSITION OVERLAY -->
+    <div id="transition-overlay"></div>
+
     <script>
         const API_URL = '/api'; 
         let allGameNames = [];
@@ -390,7 +407,7 @@
         let state = {
             username: "", score: 0, currentCategoryName: "", highScores: {}, 
             games: [], currentGameIndex: 0, currentReviewIndex: 0, currentPot: 100, 
-            history: [], filterProfanity: false
+            history: [], filterProfanity: false, isTransitioning: false
         };
 
         // --- SKOR YÖNETİMİ ---
@@ -675,7 +692,7 @@
                         input.value = match; 
                         list.style.display = 'none'; 
                         toggleClearBtn();
-                        checkGuess(); 
+                        // checkGuess(); // KALDIRILDI: Artık otomatik tahmin etmiyor
                     }; 
                     list.appendChild(div); 
                 }); 
@@ -708,7 +725,52 @@
             }
         }
 
-        function passGame() { state.history.push({...state.games[state.currentGameIndex], isCorrect: false}); state.currentGameIndex++; loadLevel(); }
+        // --- GÜNCELLENEN PAS GEÇ FONKSİYONU ---
+        function passGame(btn) {
+            if (state.isTransitioning) return;
+            state.isTransitioning = true;
+
+            const overlay = document.getElementById('transition-overlay');
+            const rect = btn.getBoundingClientRect();
+            
+            // Overlay'i butonun merkezine konumlandır
+            overlay.style.left = (rect.left + rect.width / 2) + 'px';
+            overlay.style.top = (rect.top + rect.height / 2) + 'px';
+            
+            // Genişlet
+            overlay.style.width = '300vmax'; // Ekranı garantili kaplamak için çok büyük değer
+            overlay.style.height = '300vmax';
+            overlay.style.opacity = '1';
+
+            // Animasyon süresi kadar bekle
+            setTimeout(() => {
+                // Geçmişe ekle
+                state.history.push({...state.games[state.currentGameIndex], isCorrect: false});
+                state.currentGameIndex++;
+                
+                // Yeni seviyeyi yükle (kırmızı ekranın arkasında)
+                loadLevel();
+
+                // Yavaşça soldurarak kaybet
+                overlay.style.transition = 'opacity 0.4s ease-out';
+                overlay.style.opacity = '0';
+                
+                setTimeout(() => {
+                    // Bir sonraki kullanım için resetle
+                    overlay.style.transition = 'width 0s, height 0s, opacity 0s'; // Resetlerken animasyon olmasın
+                    overlay.style.width = '0';
+                    overlay.style.height = '0';
+                    state.isTransitioning = false;
+                    
+                    // Bir sonraki tıklama için transition'ı geri yükle
+                    setTimeout(() => {
+                         overlay.style.transition = 'width 0.5s ease-in-out, height 0.5s ease-in-out, opacity 0.3s';
+                    }, 50);
+                }, 400); // Soldurma süresi kadar bekle
+                
+            }, 500); // Büyüme süresi kadar bekle
+        }
+
         document.getElementById('guessInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkGuess(); });
 
         async function endGame() {
