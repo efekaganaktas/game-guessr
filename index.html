@@ -831,74 +831,57 @@
         document.getElementById('guessInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkGuess(); });
 
         async function endGame() {
-            // 1. Skoru Sunucuya Gönder
-            await fetch(`${API_URL}/submit-score`, { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify({username: state.username, category: state.currentCategoryName, score: state.score}) 
-            });
-
-            // 2. Skoru Yerel Hafızaya (LocalStorage) Kaydet
+            await fetch(`${API_URL}/submit-score`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({username: state.username, category: state.currentCategoryName, score: state.score}) });
+            
             state.highScores = saveUserHighScore(state.username, state.currentCategoryName, state.score);
 
-            // 3. Güncel Liderlik Tablosunu Çek
             const res = await fetch(`${API_URL}/leaderboard?category=${encodeURIComponent(state.currentCategoryName)}`);
             const leaderboard = await res.json();
             
-            // 4. Sonuç Ekranına Geç (Geri tuşu sorununu önlemek için 'replace' modu ile)
+            // Oyun bitince 'replace' ile sonuç ekranını açıyoruz. 
+            // Böylece sonuç ekranındayken geri basınca bitmiş oyuna dönmez, kategori ekranına döner.
+            // (Çünkü oyun ekranı history'de bir önceki adımda kalır, result onu ezer)
             showScreen('screen-result', 'replace');
             
-            // 5. Skorları Ekrana Yaz
             document.getElementById('finalScoreDisplay').innerText = `Mevcut Skor : ${state.score}`;
             document.getElementById('sessionBestDisplay').innerText = `En İyi Skor : ${state.highScores[state.currentCategoryName] || state.score}`;
             document.getElementById('resultCategoryTitle').innerText = state.currentCategoryName;
             
-            // 6. Sonuç Izgarasını (Grid) Oluştur (Hangi oyunları bildin/bilemedin)
-            const grid = document.getElementById('resultGrid'); 
-            grid.innerHTML = "";
+            const grid = document.getElementById('resultGrid'); grid.innerHTML = "";
             state.history.forEach(h => {
-                const div = document.createElement('div'); 
-                div.className = `relative aspect-video bg-black rounded border-2 ${h.isCorrect ? 'border-steam-success' : 'border-steam-error'}`;
+                const div = document.createElement('div'); div.className = `relative aspect-video bg-black rounded border-2 ${h.isCorrect ? 'border-steam-success' : 'border-steam-error'}`;
                 div.innerHTML = `<img src="${h.image}" class="w-full h-full object-cover opacity-70"><div class="absolute bottom-0 w-full bg-black/80 text-white text-[10px] p-1 text-center truncate">${h.name}</div>`;
                 grid.appendChild(div);
             });
-
-            // 7. LİDERLİK TABLOSUNU GÜVENLİ ŞEKİLDE OLUŞTUR (GÜNCELLENEN KISIM BURASI)
+            
+            // --- GÜVENLİK GÜNCELLEMESİ BAŞLANGIÇ ---
+            // innerHTML yerine textContent kullanıldı
             const tbody = document.getElementById('leaderboardBody'); 
-            tbody.innerHTML = ""; // Tabloyu temizle
-
-            leaderboard.forEach((p, i) => {
-                // Satırı (tr) oluştur
+            tbody.innerHTML = "";
+            
+            leaderboard.forEach((p, i) => { 
                 const tr = document.createElement('tr');
+                tr.className = p.username === state.username ? "bg-primary text-background-dark font-bold" : "text-slate-400 border-b border-white/5";
                 
-                // Tasarım sınıfını ayarla (Kullanıcı kendisi ise farklı renk)
-                if (p.username === state.username) {
-                    tr.className = "bg-primary text-background-dark font-bold";
-                } else {
-                    tr.className = "text-slate-400 border-b border-white/5";
-                }
-
-                // Sıralama Numarası (td)
+                // Sıra No
                 const tdRank = document.createElement('td');
                 tdRank.className = "p-3";
                 tdRank.textContent = i + 1;
-
-                // Kullanıcı Adı (td) - BURASI ÖNEMLİ: textContent kullanarak XSS'i engelliyoruz
+                tr.appendChild(tdRank);
+                
+                // Kullanıcı Adı (Güvenli şekilde ekleniyor)
                 const tdUser = document.createElement('td');
-                tdUser.textContent = p.username; 
-
-                // Puan (td)
+                tdUser.textContent = p.username;
+                tr.appendChild(tdUser);
+                
+                // Puan
                 const tdScore = document.createElement('td');
                 tdScore.textContent = p.score;
-
-                // Hepsini satıra ekle
-                tr.appendChild(tdRank);
-                tr.appendChild(tdUser);
                 tr.appendChild(tdScore);
                 
-                // Satırı tabloya ekle
                 tbody.appendChild(tr);
             });
+            // --- GÜVENLİK GÜNCELLEMESİ BİTİŞ ---
         }
     </script>
     
@@ -906,6 +889,7 @@
         <div class="max-w-4xl mx-auto px-4 text-xs leading-relaxed">
             <p><strong>GameGuessr</strong>, Valve Corporation tarafından oluşturulmamış, onaylanmamış veya desteklenmemiştir.</p>
             <p>Bu proje, Steam Web API kullanan, hayran yapımı (fan-made) ücretsiz bir oyundur.</p>
+            <p class="mt-2 text-[10px] opacity-40"><a href="/privacy" target="_blank" class="hover:text-primary">Gizlilik Politikası</a></p>
         </div>
     </footer>
 </body>
